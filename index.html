@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel Gabriel - v0.50</title>
+    <title>Painel Gabriel - v0.51</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { 
@@ -45,7 +45,6 @@
         
         .btn-del { background: #ff4d4d; color: white; border: none; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; }
 
-        /* OVERLAY PARA PRINT */
         #photoOverlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box; }
         #resultImage { max-width: 100%; max-height: 80%; object-fit: contain; border: 1px solid #555; background: white; margin-bottom: 15px; }
         
@@ -134,9 +133,9 @@
     }
 
     function carregarTudo() {
-        const d = localStorage.getItem('GABRIEL_DATA_V50'); 
+        const d = localStorage.getItem('GABRIEL_DATA_V51'); 
         if (d) memoria = JSON.parse(d);
-        const loginSalvo = localStorage.getItem('GABRIEL_LOGIN_V50');
+        const loginSalvo = localStorage.getItem('GABRIEL_LOGIN_V51');
         if (loginSalvo) {
             const obj = JSON.parse(loginSalvo);
             document.getElementById('usuario').value = obj.u || "";
@@ -150,9 +149,7 @@
         const s = document.getElementById('senha').value.trim();
         if (u === "Gabriel" && s === "12345") {
             if (document.getElementById('lembrar').checked) {
-                localStorage.setItem('GABRIEL_LOGIN_V50', JSON.stringify({u: u, s: s}));
-            } else {
-                localStorage.removeItem('GABRIEL_LOGIN_V50');
+                localStorage.setItem('GABRIEL_LOGIN_V51', JSON.stringify({u: u, s: s}));
             }
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('menuSection').classList.remove('hidden');
@@ -180,7 +177,7 @@
             tr.innerHTML = `<td>${obj.cod}</td><td>${obj.item}</td><td class="qtd-editavel" onclick="calcularQtd(${i})">${obj.qtd}</td><td>R$ ${obj.preco}</td><td class="no-photo"><button class="btn-del" onclick="removerItem(${i})">❌</button></td>`;
             corpo.appendChild(tr);
         });
-        localStorage.setItem('GABRIEL_DATA_V50', JSON.stringify(memoria));
+        localStorage.setItem('GABRIEL_DATA_V51', JSON.stringify(memoria));
     }
 
     function calcularQtd(i) {
@@ -257,12 +254,15 @@
             }
         });
         if(!temItemTotal) return mostrarAviso("Nenhum item com quantidade!");
-        window.open("https://wa.me/?text=" + encodeURIComponent(txt), '_blank');
+        
+        // Link corrigido para evitar o erro ERR_UNKNOWN_URL_SCHEME
+        const link = "https://api.whatsapp.com/send?text=" + encodeURIComponent(txt);
+        window.open(link, '_blank');
     }
 
     function fecharFoto() { document.getElementById('photoOverlay').classList.add('hidden'); }
     function zerarQuantidades() { if(confirm("Deseja zerar as quantidades deste setor?")) { memoria[window.setorAtivo].forEach(i => i.qtd = 0); renderizar(); } }
-    function salvarAgoraManual() { localStorage.setItem('GABRIEL_DATA_V50', JSON.stringify(memoria)); mostrarAviso("✅ Tudo Salvo!"); }
+    function salvarAgoraManual() { localStorage.setItem('GABRIEL_DATA_V51', JSON.stringify(memoria)); mostrarAviso("✅ Tudo Salvo!"); }
     function voltar() { document.getElementById('planilhaSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
     function logout() { location.reload(); }
 </script>
