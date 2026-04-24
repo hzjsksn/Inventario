@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Painel Gabriel - v0.50</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { 
+            --bg: #f0f2f5; --card: #ffffff; --text: #333; --qtd-bg: #fff9e6;
+            --primary: #007bff; --secondary: #6c757d; --success: #28a745;
+            --info: #17a2b8; --warning: #ff9800; --danger: #dc3545; --purple: #6f42c1;
+        }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 98vh; box-sizing: border-box; }
+        
+        .container { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); width: 100%; max-width: 480px; box-sizing: border-box; }
+        .hidden { display: none !important; }
+        
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; outline: none; }
+        
+        .login-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 15px 0; }
+        .login-row input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; margin: 0; }
+        .login-row label { font-size: 14px; cursor: pointer; color: #555; }
+
+        button { border: none; border-radius: 8px; cursor: pointer; font-weight: bold; padding: 14px; width: 100%; margin-top: 10px; font-size: 14px; color: white; text-transform: uppercase; }
+        .btn-blue { background: var(--primary); }
+        .btn-purple { background: var(--purple); }
+        .btn-green { background: var(--success); }
+        .btn-orange { background: var(--warning); }
+        .btn-cyan { background: var(--info); }
+        .btn-gray { background: var(--secondary); }
+        .btn-red { background: var(--danger); }
+        
+        .op-container { display: flex; gap: 8px; justify-content: center; margin: 20px auto; background: #e9ecef; padding: 12px; border-radius: 12px; width: 100%; box-sizing: border-box; }
+        .btn-op { flex: 1; padding: 12px 0; font-size: 18px; background: var(--secondary); margin: 0; transition: 0.3s; border-radius: 8px; }
+        .btn-op.active { background: var(--success); transform: scale(1.05); }
+
+        #customAlert { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 25px; border-radius: 30px; font-size: 14px; z-index: 2000; opacity: 0; transition: 0.3s; pointer-events: none; }
+
+        .add-box { background: #f8f9fa; border: 2px dashed var(--purple); padding: 15px; border-radius: 10px; margin-bottom: 20px; width: 100%; box-sizing: border-box; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; margin-bottom: 20px; }
+        th, td { border: 1px solid #dee2e6; padding: 10px 5px; text-align: left; font-size: 11px; }
+        .qtd-editavel { cursor: pointer; background: var(--qtd-bg); font-weight: bold; text-align: center; font-size: 16px; border: 2px solid #ffeeba; min-width: 45px; }
+        
+        .btn-del { background: #ff4d4d; color: white; border: none; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; }
+
+        /* OVERLAY PARA PRINT */
+        #photoOverlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box; }
+        #resultImage { max-width: 100%; max-height: 80%; object-fit: contain; border: 1px solid #555; background: white; margin-bottom: 15px; }
+        
+        .setor-titulo-captura { background: #eee; padding: 8px; margin-top: 15px; text-align: center; border-radius: 5px; color: #333; font-size: 14px; font-weight: bold; }
+    </style>
+</head>
+<body onload="carregarTudo()">
+
+<div id="customAlert"></div>
+
+<div id="photoOverlay" class="hidden">
+    <p style="color:#25d366; font-weight:bold; margin-bottom: 10px; font-size: 16px;">📸 TIRE UM PRINT DA TELA!</p>
+    <img id="resultImage" src="">
+    <button class="btn-red" style="width: 90%;" onclick="fecharFoto()">FECHAR RELATÓRIO</button>
+</div>
+
+<div class="container">
+    <div id="loginSection">
+        <h2 style="text-align: center;">Acesso Painel</h2>
+        <input type="text" id="usuario" placeholder="Usuário">
+        <input type="password" id="senha" placeholder="Senha">
+        <div class="login-row">
+            <input type="checkbox" id="lembrar"> 
+            <label for="lembrar">Lembrar acesso</label>
+        </div>
+        <button class="btn-blue" onclick="acessar()">Entrar</button>
+    </div>
+
+    <div id="menuSection" class="hidden">
+        <h2 style="text-align: center;">Menu Principal</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <button class="btn-blue" onclick="abrirSetor('Inventário')">Inventário</button>
+            <button class="btn-blue" onclick="abrirSetor('Triados')">Triados</button>
+            <button class="btn-blue" onclick="abrirSetor('Pregação')">Pregação</button>
+            <button class="btn-blue" onclick="abrirSetor('Não Triado')">Não Triado</button>
+            <button class="btn-blue" style="grid-column: span 2;" onclick="abrirSetor('Quantidade Pedido')">Qtd Pedido</button>
+        </div>
+        <button class="btn-gray" onclick="logout()">Sair</button>
+    </div>
+
+    <div id="planilhaSection" class="hidden">
+        <div class="add-box">
+            <h4 style="margin:0 0 10px 0; text-align:center; color:var(--purple)">➕ NOVO ITEM EM: <br><span id="labelSetor" style="color:#333"></span></h4>
+            <input type="text" id="novoCod" placeholder="Código">
+            <input type="text" id="novoItem" placeholder="Nome do Produto">
+            <input type="number" id="novoPreco" placeholder="Preço">
+            <input type="number" id="novoQtd" placeholder="Quantidade">
+            <button class="btn-purple" onclick="adicionarItemNovo()">CADASTRAR</button>
+        </div>
+
+        <p style="text-align:center; font-weight:bold; margin:0; font-size:12px; color:#666;">MODO DE EDIÇÃO:</p>
+        <div class="op-container">
+            <button id="op-set" class="btn-op active" onclick="setOp('set')">✎</button>
+            <button id="op-add" class="btn-op" onclick="setOp('add')">+</button>
+            <button id="op-sub" class="btn-op" onclick="setOp('sub')">-</button>
+            <button id="op-mul" class="btn-op" onclick="setOp('mul')">×</button>
+            <button id="op-div" class="btn-op" onclick="setOp('div')">÷</button>
+        </div>
+
+        <div id="areaCapture" style="background: white; padding: 10px; border-radius: 5px; width: 100%; box-sizing: border-box;">
+            <div id="tabelasSetores"></div>
+        </div>
+
+        <button class="btn-green" onclick="salvarAgoraManual()">💾 SALVAR DADOS</button>
+        <button class="btn-orange" onclick="zerarQuantidades()">🔄 ZERAR SETOR ATUAL</button>
+        <button class="btn-cyan" onclick="gerarFoto()">📸 GERAR FOTO GERAL</button>
+        <button class="btn-green" style="background: #25d366;" onclick="enviarWhatsAppGeral()">📲 WHATSAPP (GERAL)</button>
+        <button class="btn-gray" onclick="voltar()">⬅ VOLTAR</button>
+    </div>
+</div>
+
+<script>
+    let memoria = { 'Inventário': [], 'Triados': [], 'Pregação': [], 'Não Triado': [], 'Quantidade Pedido': [] };
+    let operacaoAtual = 'set';
+
+    function mostrarAviso(msg) {
+        const a = document.getElementById('customAlert'); a.innerText = msg; a.style.opacity = "1";
+        setTimeout(() => { a.style.opacity = "0"; }, 2000);
+    }
+
+    function setOp(op) {
+        operacaoAtual = op;
+        document.querySelectorAll('.btn-op').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('op-' + op).classList.add('active');
+        mostrarAviso("Modo alterado!");
+    }
+
+    function carregarTudo() {
+        const d = localStorage.getItem('GABRIEL_DATA_V50'); 
+        if (d) memoria = JSON.parse(d);
+        const loginSalvo = localStorage.getItem('GABRIEL_LOGIN_V50');
+        if (loginSalvo) {
+            const obj = JSON.parse(loginSalvo);
+            document.getElementById('usuario').value = obj.u || "";
+            document.getElementById('senha').value = obj.s || "";
+            document.getElementById('lembrar').checked = true;
+        }
+    }
+
+    function acessar() {
+        const u = document.getElementById('usuario').value.trim();
+        const s = document.getElementById('senha').value.trim();
+        if (u === "Gabriel" && s === "12345") {
+            if (document.getElementById('lembrar').checked) {
+                localStorage.setItem('GABRIEL_LOGIN_V50', JSON.stringify({u: u, s: s}));
+            } else {
+                localStorage.removeItem('GABRIEL_LOGIN_V50');
+            }
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('menuSection').classList.remove('hidden');
+        } else { mostrarAviso("Senha incorreta!"); }
+    }
+
+    function abrirSetor(n) {
+        window.setorAtivo = n;
+        document.getElementById('labelSetor').innerText = n;
+        document.getElementById('menuSection').classList.add('hidden');
+        document.getElementById('planilhaSection').classList.remove('hidden');
+        renderizar();
+    }
+
+    function renderizar() {
+        const container = document.getElementById('tabelasSetores');
+        container.innerHTML = `<div class="setor-titulo-captura">EXIBINDO: ${window.setorAtivo}</div>`;
+        const table = document.createElement('table');
+        table.innerHTML = `<thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th><th class="no-photo">Ação</th></tr></thead><tbody id="corpoAtivo"></tbody>`;
+        container.appendChild(table);
+        const corpo = document.getElementById('corpoAtivo');
+        const lista = memoria[window.setorAtivo] || [];
+        lista.forEach((obj, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${obj.cod}</td><td>${obj.item}</td><td class="qtd-editavel" onclick="calcularQtd(${i})">${obj.qtd}</td><td>R$ ${obj.preco}</td><td class="no-photo"><button class="btn-del" onclick="removerItem(${i})">❌</button></td>`;
+            corpo.appendChild(tr);
+        });
+        localStorage.setItem('GABRIEL_DATA_V50', JSON.stringify(memoria));
+    }
+
+    function calcularQtd(i) {
+        const n = prompt("Valor para a operação:");
+        if (n !== null && n !== "") { 
+            const valorInput = parseFloat(n) || 0;
+            let item = memoria[window.setorAtivo][i];
+            if (operacaoAtual === 'set') item.qtd = valorInput;
+            else if (operacaoAtual === 'add') item.qtd += valorInput;
+            else if (operacaoAtual === 'sub') item.qtd -= valorInput;
+            else if (operacaoAtual === 'mul') item.qtd *= valorInput;
+            else if (operacaoAtual === 'div') item.qtd = valorInput !== 0 ? item.qtd / valorInput : item.qtd;
+            item.qtd = Math.round(item.qtd * 100) / 100;
+            renderizar(); 
+        }
+    }
+
+    function adicionarItemNovo() {
+        const c = document.getElementById('novoCod').value.trim();
+        const it = document.getElementById('novoItem').value.trim();
+        const p = document.getElementById('novoPreco').value.trim() || "0.00";
+        const q = document.getElementById('novoQtd').value.trim() || "0";
+        if (!c || !it) return mostrarAviso("Preencha Cód e Nome!");
+        memoria[window.setorAtivo].push({ cod: c, item: it, qtd: parseFloat(q), preco: p });
+        document.getElementById('novoCod').value = ""; document.getElementById('novoItem').value = "";
+        document.getElementById('novoPreco').value = ""; document.getElementById('novoQtd').value = "";
+        renderizar();
+    }
+
+    function removerItem(i) {
+        if(confirm("Deseja excluir este item?")) { memoria[window.setorAtivo].splice(i, 1); renderizar(); }
+    }
+
+    function gerarFoto() {
+        window.scrollTo(0,0);
+        mostrarAviso("Gerando Relatório...");
+        const container = document.getElementById('tabelasSetores');
+        const backupSetor = window.setorAtivo;
+        container.innerHTML = '<h2 style="text-align:center; margin-bottom:10px;">Relatório Geral - Gabriel</h2>';
+        Object.keys(memoria).forEach(setor => {
+            const itens = memoria[setor].filter(i => i.qtd > 0);
+            if(itens.length > 0) {
+                container.innerHTML += `<div class="setor-titulo-captura">${setor}</div>`;
+                let html = `<table><thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th></tr></thead><tbody>`;
+                itens.forEach(i => { html += `<tr><td>${i.cod}</td><td>${i.item}</td><td>${i.qtd}</td><td>R$ ${i.preco}</td></tr>`; });
+                html += `</tbody></table>`;
+                container.innerHTML += html;
+            }
+        });
+
+        setTimeout(() => {
+            html2canvas(document.getElementById('areaCapture'), {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: "#ffffff"
+            }).then(canvas => {
+                document.getElementById('resultImage').src = canvas.toDataURL("image/png");
+                document.getElementById('photoOverlay').classList.remove('hidden');
+                abrirSetor(backupSetor);
+            });
+        }, 500);
+    }
+
+    function enviarWhatsAppGeral() {
+        let txt = `*Relatório de Produtos - Gabriel*\n\n`;
+        let temItemTotal = false;
+        Object.keys(memoria).forEach(setor => {
+            const itens = memoria[setor].filter(i => i.qtd > 0);
+            if(itens.length > 0) {
+                txt += `--- *SETOR: ${setor.toUpperCase()}* ---\n`;
+                itens.forEach(i => { txt += `📦 *Cód:* ${i.cod}\n🔹 *Prod:* ${i.item}\n🔢 *Qtd:* ${i.qtd}\n💰 *Preço:* ${i.preco}\n----------\n`; });
+                txt += `\n`;
+                temItemTotal = true;
+            }
+        });
+        if(!temItemTotal) return mostrarAviso("Nenhum item com quantidade!");
+        window.open("https://wa.me/?text=" + encodeURIComponent(txt), '_blank');
+    }
+
+    function fecharFoto() { document.getElementById('photoOverlay').classList.add('hidden'); }
+    function zerarQuantidades() { if(confirm("Deseja zerar as quantidades deste setor?")) { memoria[window.setorAtivo].forEach(i => i.qtd = 0); renderizar(); } }
+    function salvarAgoraManual() { localStorage.setItem('GABRIEL_DATA_V50', JSON.stringify(memoria)); mostrarAviso("✅ Tudo Salvo!"); }
+    function voltar() { document.getElementById('planilhaSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
+    function logout() { location.reload(); }
+</script>
+</body>
+</html>
