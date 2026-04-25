@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v2.9</title>
+    <title>Painel - v3.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --qtd-bg: #fff9e6; --primary: #007bff; --secondary: #6c757d; --success: #28a745; --warning: #ff9800; --danger: #dc3545; --purple: #6f42c1; }
@@ -51,12 +51,12 @@
 
     <div id="registroSection" class="hidden">
         <h2 style="text-align: center;">Novo Registro</h2>
-        <input type="text" id="regUsuario" class="input-single" placeholder="Usuário">
+        <input type="text" id="regUsuario" class="input-single" placeholder="Nome de Usuário">
         <div class="input-row">
-            <input type="password" id="regSenha" placeholder="Senha">
+            <input type="password" id="regSenha" placeholder="Sua Senha">
             <div class="eye-area" onclick="alternarVisibilidade('regSenha')">👁️</div>
         </div>
-        <button class="btn-purple" onclick="registrarNovoUsuario()">Enviar</button>
+        <button class="btn-purple" onclick="registrarNovoUsuario()">Enviar Solicitação</button>
         <span style="color:var(--primary); cursor:pointer; text-decoration:underline; font-size:13px; text-align:center; display:block; margin-top:15px;" onclick="alternarLoginRegistro(false)">Voltar</span>
     </div>
 
@@ -108,117 +108,205 @@
     </div>
 </div>
 
-<div class="version-footer">versão 2.9</div>
+<div class="version-footer">versão 3.0</div>
 
 <script>
-    const SUPER_USER = "37096901"; const SUPER_PASS = "9996057";
-    const K_DATA = 'G_DATA_V27'; const K_MEMB = 'G_MEMB_V27'; const K_LOG = 'G_LOG_V27';
-    let memoria = { 'Inventário': [], 'Triados': [], 'Pregação': [], 'Não Triado': [], 'Quantidade Pedido': [] };
-    let membros = []; let cargoUsuario = ""; let operacaoAtual = 'set';
+    // CHAVE ÚNICA DESTA VERSÃO PARA EVITAR CONFLITOS
+    const CHAVE = "APP_GABRIEL_V30";
+    const SUPER_USER = "37096901"; 
+    const SUPER_PASS = "9996057";
 
-    function maskMoeda(i) { let v = i.value.replace(/\D/g, ""); v = (v/100).toFixed(2).replace(".",","); i.value = "R$ " + v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1."); }
-    function alternarVisibilidade(id) { const i = document.getElementById(id); i.type = i.type === "password" ? "text" : "password"; }
-    
-    function carregarTudo() { 
-        const d = localStorage.getItem(K_DATA); if(d) memoria = JSON.parse(d);
-        const m = localStorage.getItem(K_MEMB); if(m) membros = JSON.parse(m);
-        const l = localStorage.getItem(K_LOG); if(l) { const o=JSON.parse(l); document.getElementById('usuario').value=o.u; document.getElementById('senha').value=o.s; document.getElementById('lembrar').checked=true; }
+    let memoria = { 'Inventário': [], 'Triados': [], 'Pregação': [], 'Não Triado': [], 'Quantidade Pedido': [] };
+    let membros = []; 
+    let cargoUsuario = ""; 
+    let operacaoAtual = 'set';
+
+    function maskMoeda(i) { 
+        let v = i.value.replace(/\D/g, ""); 
+        v = (v/100).toFixed(2).replace(".",","); 
+        i.value = "R$ " + v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1."); 
     }
 
-    function saveM() { localStorage.setItem(K_MEMB, JSON.stringify(membros)); }
+    function alternarVisibilidade(id) { 
+        const i = document.getElementById(id); 
+        i.type = i.type === "password" ? "text" : "password"; 
+    }
 
-    function dispararAviso(t, tipo) { const d = document.getElementById('msgErroLogin'); d.innerText = t; d.style.display = "block"; d.style.background = tipo === "erro" ? "#ffebee" : "#e8f5e9"; d.style.color = tipo === "erro" ? "#c62828" : "#2e7d32"; }
+    function carregarTudo() { 
+        const d = localStorage.getItem(CHAVE + '_DATA'); if(d) memoria = JSON.parse(d);
+        const m = localStorage.getItem(CHAVE + '_MEMB'); if(m) membros = JSON.parse(m);
+        const l = localStorage.getItem(CHAVE + '_LOG'); 
+        if(l) { 
+            const o = JSON.parse(l); 
+            document.getElementById('usuario').value = o.u; 
+            document.getElementById('senha').value = o.s; 
+            document.getElementById('lembrar').checked = true; 
+        }
+    }
+
+    function saveM() { localStorage.setItem(CHAVE + '_MEMB', JSON.stringify(membros)); }
+    function saveD() { localStorage.setItem(CHAVE + '_DATA', JSON.stringify(memoria)); }
+
+    function dispararAviso(t, tipo) { 
+        const d = document.getElementById('msgErroLogin'); 
+        d.innerText = t; 
+        d.style.display = "block"; 
+        d.style.background = tipo === "erro" ? "#ffebee" : "#e8f5e9"; 
+        d.style.color = tipo === "erro" ? "#c62828" : "#2e7d32"; 
+    }
     
     function acessar() {
-        const u = document.getElementById('usuario').value.trim(); const s = document.getElementById('senha').value.trim(); const lemb = document.getElementById('lembrar').checked;
-        if(u === SUPER_USER && s === SUPER_PASS) { cargoUsuario = "Supervisor"; document.getElementById('btnMembros').classList.remove('hidden'); return finalizarLogin(u,s,lemb); }
+        const u = document.getElementById('usuario').value.trim(); 
+        const s = document.getElementById('senha').value.trim(); 
+        const lemb = document.getElementById('lembrar').checked;
+        
+        if(u === SUPER_USER && s === SUPER_PASS) { 
+            cargoUsuario = "Supervisor"; 
+            document.getElementById('btnMembros').classList.remove('hidden'); 
+            return finalizarLogin(u,s,lemb); 
+        }
+        
         let m = membros.find(x => x.user === u);
-        if(!m) return dispararAviso("Não cadastrado!", "erro");
-        if(m.pass !== s) return dispararAviso("Senha errada!", "erro");
-        if(!m.aprovado) return dispararAviso("Acesso Pendente!", "erro");
-        cargoUsuario = m.cargo; finalizarLogin(u,s,lemb);
+        if(!m) return dispararAviso("Usuário não encontrado!", "erro");
+        if(m.pass !== s) return dispararAviso("Senha incorreta!", "erro");
+        if(!m.aprovado) return dispararAviso("Aguardando aprovação!", "erro");
+        
+        cargoUsuario = m.cargo; 
+        finalizarLogin(u,s,lemb);
     }
 
-    function finalizarLogin(u,s,l) { if(l) localStorage.setItem(K_LOG, JSON.stringify({u,s})); else localStorage.removeItem(K_LOG); document.getElementById('loginSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
+    function finalizarLogin(u,s,l) { 
+        if(l) localStorage.setItem(CHAVE + '_LOG', JSON.stringify({u,s})); 
+        else localStorage.removeItem(CHAVE + '_LOG'); 
+        document.getElementById('loginSection').classList.add('hidden'); 
+        document.getElementById('menuSection').classList.remove('hidden'); 
+    }
     
     function registrarNovoUsuario() {
-        const u = document.getElementById('regUsuario').value.trim(); const s = document.getElementById('regSenha').value.trim(); if(!u || !s) return;
-        membros.push({ user: u, pass: s, data: new Date().toLocaleDateString(), cargo: "Colaborador", aprovado: false });
-        saveM(); alternarLoginRegistro(false); dispararAviso("Solicitado!", "sucesso");
-    }
+        const u = document.getElementById('regUsuario').value.trim(); 
+        const s = document.getElementById('regSenha').value.trim(); 
+        if(!u || !s) return;
+        
+        // Verifica se já existe
+        if(membros.find(x => x.user === u)) return dispararAviso("Usuário já existe!", "erro");
 
-    function aprovarMembro(i) {
-        membros[i].aprovado = true;
-        saveM();
-        renderMembros();
+        membros.push({ user: u, pass: s, data: new Date().toLocaleDateString(), cargo: "Colaborador", aprovado: false });
+        saveM(); 
+        alternarLoginRegistro(false); 
+        dispararAviso("Solicitação enviada!", "sucesso");
     }
 
     function abrirSetor(n) { 
-        window.setorAtivo = n; document.getElementById('labelSetor').innerText = n;
-        document.getElementById('novoCod').value = ""; document.getElementById('novoItem').value = ""; document.getElementById('novoPreco').value = ""; document.getElementById('novoQtd').value = "";
+        window.setorAtivo = n; 
+        document.getElementById('labelSetor').innerText = n;
         const isAux = cargoUsuario === "Auxiliar";
-        document.getElementById('areaCadastro').classList.toggle('hidden', isAux); document.getElementById('btnZerar').classList.toggle('hidden', isAux);
-        document.getElementById('menuSection').classList.add('hidden'); document.getElementById('planilhaSection').classList.remove('hidden'); render();
+        document.getElementById('areaCadastro').classList.toggle('hidden', isAux); 
+        document.getElementById('btnZerar').classList.toggle('hidden', isAux);
+        document.getElementById('menuSection').classList.add('hidden'); 
+        document.getElementById('planilhaSection').classList.remove('hidden'); 
+        render();
     }
 
-    function setOp(op) { operacaoAtual = op; document.querySelectorAll('.btn-op').forEach(b => b.classList.remove('active')); document.getElementById('op-'+op).classList.add('active'); }
+    function setOp(op) { 
+        operacaoAtual = op; 
+        document.querySelectorAll('.btn-op').forEach(b => b.classList.remove('active')); 
+        document.getElementById('op-'+op).classList.add('active'); 
+    }
     
     function calc(i) {
         const n = prompt("Valor:"); if(n !== null && n !== "") {
             let v = parseFloat(n) || 0; let it = memoria[window.setorAtivo][i];
-            if(operacaoAtual === 'set') it.qtd = v; else if(operacaoAtual === 'add') it.qtd += v; else if(operacaoAtual === 'sub') it.qtd -= v;
-            else if(operacaoAtual === 'mul') it.qtd *= v; else if(operacaoAtual === 'div') it.qtd = v !== 0 ? it.qtd/v : it.qtd;
-            it.qtd = isNaN(it.qtd) ? 0 : Math.round(it.qtd * 100) / 100; render();
+            let q = parseFloat(it.qtd) || 0;
+            if(operacaoAtual === 'set') q = v; 
+            else if(operacaoAtual === 'add') q += v; 
+            else if(operacaoAtual === 'sub') q -= v;
+            else if(operacaoAtual === 'mul') q *= v; 
+            else if(operacaoAtual === 'div') q = v !== 0 ? q/v : q;
+            it.qtd = Math.round(q * 100) / 100; 
+            render();
         }
     }
 
     function adicionarItemNovo() {
-        const c = document.getElementById('novoCod').value; const it = document.getElementById('novoItem').value; const p = document.getElementById('novoPreco').value || "R$ 0,00"; const q = document.getElementById('novoQtd').value || "0";
-        if(!c || !it) return; memoria[window.setorAtivo].push({ cod: c, item: it, qtd: q, preco: p }); render();
-        document.getElementById('novoCod').value = ""; document.getElementById('novoItem').value = ""; document.getElementById('novoPreco').value = ""; document.getElementById('novoQtd').value = "";
+        const c = document.getElementById('novoCod').value; 
+        const it = document.getElementById('novoItem').value; 
+        const p = document.getElementById('novoPreco').value || "R$ 0,00"; 
+        const q = document.getElementById('novoQtd').value || "0";
+        if(!c || !it) return; 
+        memoria[window.setorAtivo].push({ cod: c, item: it, qtd: q, preco: p }); 
+        render();
+        document.getElementById('novoCod').value = ""; 
+        document.getElementById('novoItem').value = ""; 
+        document.getElementById('novoPreco').value = ""; 
+        document.getElementById('novoQtd').value = "";
     }
 
     function render() {
-        const c = document.getElementById('tabelasSetores'); c.innerHTML = `<div style="background:#eee; padding:5px; font-weight:bold; text-align:center;">${window.setorAtivo}</div>`;
-        const t = document.createElement('table'); t.innerHTML = `<thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th><th>X</th></tr></thead><tbody id="corpoAtivo"></tbody>`;
-        c.appendChild(t); const cb = document.getElementById('corpoAtivo');
+        const c = document.getElementById('tabelasSetores'); 
+        c.innerHTML = `<div style="background:#eee; padding:5px; font-weight:bold; text-align:center;">${window.setorAtivo}</div>`;
+        const t = document.createElement('table'); 
+        t.innerHTML = `<thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th><th>X</th></tr></thead><tbody id="corpoAtivo"></tbody>`;
+        c.appendChild(t); 
+        const cb = document.getElementById('corpoAtivo');
         memoria[window.setorAtivo].forEach((o, i) => {
             const eqtd = cargoUsuario === "Auxiliar" ? `<td>${o.qtd}</td>` : `<td class="qtd-editavel" onclick="calc(${i})">${o.qtd}</td>`;
-            cb.innerHTML += `<tr><td>${o.cod}</td><td>${o.item}</td>${eqtd}<td>${o.preco}</td><td><button style="background:red; color:white; border:none; border-radius:4px; padding:2px 5px;" onclick="memoria[window.setorAtivo].splice(${i},1); render();">❌</button></td></tr>`;
+            cb.innerHTML += `<tr><td>${o.cod}</td><td>${o.item}</td>${eqtd}<td>${o.preco}</td><td><button style="background:red; color:white; border:none; padding:2px 5px;" onclick="memoria[window.setorAtivo].splice(${i},1); render();">❌</button></td></tr>`;
         });
     }
 
     function enviarWhatsAppGeral() {
         let txt = "*Relatório - Gabriel*%0A%0A"; let d = false;
-        Object.keys(memoria).forEach(s => { const it = memoria[s].filter(x => x.qtd != 0); if(it.length > 0) { d = true; txt += `--- *${s.toUpperCase()}* ---%0A`; it.forEach(i => txt += `📦 ${i.item} | Qtd: ${i.qtd}%0A`); } });
+        Object.keys(memoria).forEach(s => { 
+            const it = memoria[s].filter(x => x.qtd != 0); 
+            if(it.length > 0) { d = true; txt += `--- *${s.toUpperCase()}* ---%0A`; it.forEach(i => txt += `📦 ${i.item} | Qtd: ${i.qtd}%0A`); } 
+        });
         if(d) window.open(`https://wa.me/?text=${txt}`, '_blank');
     }
 
-    function tirarFoto() { html2canvas(document.getElementById('areaCapture')).then(canvas => { document.getElementById('resultImage').src = canvas.toDataURL(); document.getElementById('photoOverlay').classList.remove('hidden'); }); }
-    function alternarLoginRegistro(r) { document.getElementById('loginSection').classList.toggle('hidden', r); document.getElementById('registroSection').classList.toggle('hidden', !r); }
-    function abrirMembros() { document.getElementById('menuSection').classList.add('hidden'); document.getElementById('membrosSection').classList.remove('hidden'); renderMembros(); }
+    function tirarFoto() { 
+        html2canvas(document.getElementById('areaCapture')).then(canvas => { 
+            document.getElementById('resultImage').src = canvas.toDataURL(); 
+            document.getElementById('photoOverlay').classList.remove('hidden'); 
+        }); 
+    }
+
+    function alternarLoginRegistro(r) { 
+        document.getElementById('loginSection').classList.toggle('hidden', r); 
+        document.getElementById('registroSection').classList.toggle('hidden', !r); 
+    }
+
+    function abrirMembros() { 
+        document.getElementById('menuSection').classList.add('hidden'); 
+        document.getElementById('membrosSection').classList.remove('hidden'); 
+        renderMembros(); 
+    }
     
     function renderMembros() {
         const c = document.getElementById('corpoMembros'); c.innerHTML = "";
         membros.forEach((m, i) => {
             const ac = m.aprovado ? 
                 `<button style="background:red; color:white; border:none; padding:4px; border-radius:4px;" onclick="membros.splice(${i},1); saveM(); renderMembros();">❌</button>` : 
-                `<button style="background:green; color:white; border:none; padding:4px; border-radius:4px;" onclick="aprovarMembro(${i})">✅</button>`;
+                `<button style="background:green; color:white; border:none; padding:4px; border-radius:4px;" onclick="membros[${i}].aprovado=true; saveM(); renderMembros();">✅</button>`;
             
             c.innerHTML += `<tr><td>${m.user}</td><td>${m.pass}</td><td>
                 <select onchange="membros[${i}].cargo=this.value; saveM();" style="font-size:10px;">
                     <option value="Supervisor" ${m.cargo==='Supervisor'?'selected':''}>Supervisor</option>
                     <option value="Colaborador" ${m.cargo==='Colaborador'?'selected':''}>Colaborador</option>
                     <option value="Auxiliar" ${m.cargo==='Auxiliar'?'selected':''}>Auxiliar</option>
-                    ${!m.aprovado ? '<option value="Pendente" selected disabled>Pendente</option>' : ''}
                 </select>
             </td><td>${ac}</td></tr>`;
         });
     }
 
-    function salvarAgoraManual() { localStorage.setItem(K_DATA, JSON.stringify(memoria)); saveM(); alert("Salvo!"); }
+    function salvarAgoraManual() { saveD(); saveM(); alert("Dados salvos!"); }
     function fecharFoto() { document.getElementById('photoOverlay').classList.add('hidden'); }
-    function logout() { location.reload(); }
+    
+    // LOGOUT LIMPO SEM REDIRECIONAMENTO EXTERNO
+    function logout() { 
+        document.getElementById('menuSection').classList.add('hidden');
+        document.getElementById('loginSection').classList.remove('hidden');
+    }
+
     function voltar() { document.getElementById('planilhaSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
     function voltarAoMenu() { document.getElementById('membrosSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
     function zerarQuantidades() { if(confirm("Zerar tudo?")) { memoria[window.setorAtivo].forEach(i => i.qtd = 0); render(); } }
