@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v1.7</title>
+    <title>Painel - v1.9</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { 
@@ -16,39 +16,14 @@
         .hidden { display: none !important; }
         .version-footer { font-size: 10px; color: #bbb; text-align: center; margin-top: 20px; width: 100%; }
         
-        /* NOVO DESIGN DO OLHO - TOTALMENTE OPERACIONAL */
         .input-row { 
-            display: flex; 
-            width: 100%; 
-            margin: 8px 0; 
-            background: #fff; 
-            border: 1px solid #ddd; 
-            border-radius: 8px; 
-            overflow: hidden; 
-            height: 52px; 
-            align-items: center;
+            display: flex; width: 100%; margin: 8px 0; background: #fff; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; height: 52px; align-items: center;
         }
         .input-row input { 
-            flex: 1; 
-            border: none; 
-            padding: 0 12px; 
-            font-size: 16px; 
-            outline: none; 
-            background: transparent;
-            height: 100%;
+            flex: 1; border: none; padding: 0 12px; font-size: 16px; outline: none; background: transparent; height: 100%;
         }
         .eye-area { 
-            width: 60px; 
-            height: 100%;
-            background: #f1f3f5; 
-            border-left: 1px solid #ddd; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 22px; 
-            cursor: pointer; 
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
+            width: 60px; height: 100%; background: #f8f9fa; border-left: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; -webkit-tap-highlight-color: transparent;
         }
 
         .input-single { width: 100%; height: 52px; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
@@ -84,7 +59,7 @@
         <input type="text" id="usuario" class="input-single" placeholder="Usuário">
         <div class="input-row">
             <input type="password" id="senha" placeholder="Senha">
-            <div class="eye-area" onmousedown="togglePass('senha')" ontouchstart="togglePass('senha')">👁️</div>
+            <div class="eye-area" onclick="alternarVisibilidade('senha')">👁️</div>
         </div>
         <div style="display:flex; align-items:center; gap:10px; margin:10px 0;">
             <input type="checkbox" id="lembrar" style="width:18px; height:18px;"> <label for="lembrar" style="font-size:14px; color:#555;">Lembrar acesso</label>
@@ -98,7 +73,7 @@
         <input type="text" id="regUsuario" class="input-single" placeholder="Escolha um Usuário">
         <div class="input-row">
             <input type="password" id="regSenha" placeholder="Escolha uma Senha">
-            <div class="eye-area" onmousedown="togglePass('regSenha')" ontouchstart="togglePass('regSenha')">👁️</div>
+            <div class="eye-area" onclick="alternarVisibilidade('regSenha')">👁️</div>
         </div>
         <button class="btn-purple" style="background:var(--purple)" onclick="registrarNovoUsuario()">Enviar Solicitação</button>
         <span class="link-acao" onclick="alternarLoginRegistro(false)">Voltar ao Login</span>
@@ -152,7 +127,7 @@
     </div>
 </div>
 
-<div class="version-footer">versão 1.7 - Ultimate Eye Logic</div>
+<div class="version-footer">versão 1.9 - Toggle View Logic</div>
 
 <script>
     const SUPER_USER = "37096901";
@@ -162,7 +137,8 @@
     let cargoUsuario = "";
     let operacaoAtual = 'set';
 
-    function togglePass(id) {
+    // FUNÇÃO DE CLIQUE ÚNICO (TOOGLE)
+    function alternarVisibilidade(id) {
         const input = document.getElementById(id);
         input.type = (input.type === "password") ? "text" : "password";
     }
