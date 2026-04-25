@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v2.2</title>
+    <title>Painel - v2.4</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { 
@@ -99,10 +99,15 @@
     <div id="planilhaSection" class="hidden">
         <div id="areaCadastro">
             <h4 style="margin:0 0 10px 0; text-align:center; color:var(--purple)">SETOR: <span id="labelSetor"></span></h4>
-            <input type="text" id="novoCod" class="input-single" placeholder="Código" autocomplete="off">
-            <input type="text" id="novoItem" class="input-single" placeholder="Nome do Produto" autocomplete="off">
-            <input type="number" id="novoPreco" class="input-single" step="any" placeholder="Preço" autocomplete="off">
-            <input type="number" id="novoQtd" class="input-single" step="any" placeholder="Quantidade" autocomplete="off">
+            
+            <input type="tel" id="novoCod" class="input-single" placeholder="Código (Só Números)" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+            
+            <input type="text" id="novoItem" class="input-single" placeholder="Nome do Produto">
+            
+            <input type="tel" id="novoPreco" class="input-single" placeholder="R$ 0,00" oninput="mascaraPreco(this)">
+            
+            <input type="tel" id="novoQtd" class="input-single" placeholder="Quantidade (Só Números)" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+            
             <button class="btn-purple" style="background:var(--purple)" onclick="adicionarItemNovo()">CADASTRAR ITEM</button>
         </div>
         <div class="op-container" id="areaOps">
@@ -121,19 +126,26 @@
     </div>
 </div>
 
-<div class="version-footer">VERSÃO ATUAL: 2.2</div>
+<div class="version-footer">VERSÃO ATUAL: 2.4</div>
 
 <script>
     const SUPER_USER = "37096901";
     const SUPER_PASS = "9996057";
-    const KEY_DATA = 'G_DATA_V22'; // Mudança de chave para limpar cache
-    const KEY_MEMB = 'G_MEMB_V22';
-    const KEY_LOG  = 'G_LOG_V22';
+    const KEY_DATA = 'G_DATA_V24';
+    const KEY_MEMB = 'G_MEMB_V24';
+    const KEY_LOG  = 'G_LOG_V24';
 
     let memoria = { 'Inventário': [], 'Triados': [], 'Pregação': [], 'Não Triado': [], 'Quantidade Pedido': [] };
     let membros = []; 
     let cargoUsuario = "";
     let operacaoAtual = 'set';
+
+    function mascaraPreco(input) {
+        let v = input.value.replace(/\D/g, "");
+        v = (v / 100).toFixed(2).replace(".", ",");
+        v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+        input.value = v;
+    }
 
     function alternarVisibilidade(id) {
         const input = document.getElementById(id);
@@ -183,17 +195,13 @@
         dispararAviso("Pedido enviado!", "sucesso");
     }
 
-    // FUNÇÃO QUE ABRE O SETOR E LIMPA TUDO
     function abrirSetor(n) { 
         window.setorAtivo = n; 
         document.getElementById('labelSetor').innerText = n; 
-        
-        // LIMPEZA ABSOLUTA DOS CAMPOS (Anti-Cache)
         document.getElementById('novoCod').value = "";
         document.getElementById('novoItem').value = "";
         document.getElementById('novoPreco').value = "";
         document.getElementById('novoQtd').value = "";
-
         const isAux = (cargoUsuario === "Auxiliar");
         document.getElementById('areaCadastro').classList.toggle('hidden', isAux);
         document.getElementById('areaOps').classList.toggle('hidden', isAux);
@@ -204,6 +212,7 @@
     }
 
     function setOp(op) { operacaoAtual = op; document.querySelectorAll('.btn-op').forEach(btn => btn.classList.remove('active')); document.getElementById('op-' + op).classList.add('active'); }
+    
     function calc(i) { 
         const n = prompt("Valor:"); 
         if (n !== null && n !== "") { 
@@ -215,9 +224,11 @@
     }
 
     function adicionarItemNovo() { 
-        const c = document.getElementById('novoCod').value.trim(); const it = document.getElementById('novoItem').value.trim(); const p = document.getElementById('novoPreco').value || "0.00"; const q = document.getElementById('novoQtd').value || "0";
-        if (!c || !it) return; memoria[window.setorAtivo].push({ cod: c, item: it, qtd: parseFloat(q) || 0, preco: p }); 
-        // Limpa após cadastrar
+        const c = document.getElementById('novoCod').value.trim(); const it = document.getElementById('novoItem').value.trim(); 
+        let p = document.getElementById('novoPreco').value || "0,00"; 
+        const q = document.getElementById('novoQtd').value || "0";
+        if (!c || !it) return; 
+        memoria[window.setorAtivo].push({ cod: c, item: it, qtd: parseFloat(q) || 0, preco: p }); 
         document.getElementById('novoCod').value = ""; document.getElementById('novoItem').value = ""; document.getElementById('novoPreco').value = ""; document.getElementById('novoQtd').value = ""; render(); 
     }
 
@@ -281,7 +292,4 @@
     function voltar() { document.getElementById('planilhaSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
     function voltarAoMenu() { document.getElementById('membrosSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
     function removerItem(i) { if(confirm("Remover?")) { memoria[window.setorAtivo].splice(i, 1); render(); } }
-    function zerarQuantidades() { if(confirm("Zerar?")) { memoria[window.setorAtivo].forEach(i => i.qtd = 0); render(); } }
-</script>
-</body>
-</html>
+    function zerarQuantidades() { if(confirm("Z
