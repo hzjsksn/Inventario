@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v2.8</title>
+    <title>Painel - v2.9</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --qtd-bg: #fff9e6; --primary: #007bff; --secondary: #6c757d; --success: #28a745; --warning: #ff9800; --danger: #dc3545; --purple: #6f42c1; }
@@ -86,10 +86,10 @@
     <div id="planilhaSection" class="hidden">
         <div id="areaCadastro">
             <h4 style="margin:0 0 10px 0; text-align:center; color:var(--purple)">SETOR: <span id="labelSetor"></span></h4>
-            <input type="tel" id="novoCod" class="input-single" placeholder="Código (Só Números)" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+            <input type="text" id="novoCod" class="input-single" placeholder="Código">
             <input type="text" id="novoItem" class="input-single" placeholder="Nome do Produto">
             <input type="tel" id="novoPreco" class="input-single" placeholder="R$ 0,00" oninput="maskMoeda(this)">
-            <input type="tel" id="novoQtd" class="input-single" placeholder="Qtd (Só Números)" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+            <input type="text" id="novoQtd" class="input-single" placeholder="Quantidade">
             <button class="btn-purple" onclick="adicionarItemNovo()">Cadastrar</button>
         </div>
         <div class="op-container">
@@ -108,7 +108,7 @@
     </div>
 </div>
 
-<div class="version-footer">versão 2.8</div>
+<div class="version-footer">versão 2.9</div>
 
 <script>
     const SUPER_USER = "37096901"; const SUPER_PASS = "9996057";
@@ -124,6 +124,8 @@
         const m = localStorage.getItem(K_MEMB); if(m) membros = JSON.parse(m);
         const l = localStorage.getItem(K_LOG); if(l) { const o=JSON.parse(l); document.getElementById('usuario').value=o.u; document.getElementById('senha').value=o.s; document.getElementById('lembrar').checked=true; }
     }
+
+    function saveM() { localStorage.setItem(K_MEMB, JSON.stringify(membros)); }
 
     function dispararAviso(t, tipo) { const d = document.getElementById('msgErroLogin'); d.innerText = t; d.style.display = "block"; d.style.background = tipo === "erro" ? "#ffebee" : "#e8f5e9"; d.style.color = tipo === "erro" ? "#c62828" : "#2e7d32"; }
     
@@ -142,7 +144,13 @@
     function registrarNovoUsuario() {
         const u = document.getElementById('regUsuario').value.trim(); const s = document.getElementById('regSenha').value.trim(); if(!u || !s) return;
         membros.push({ user: u, pass: s, data: new Date().toLocaleDateString(), cargo: "Colaborador", aprovado: false });
-        localStorage.setItem(K_MEMB, JSON.stringify(membros)); alternarLoginRegistro(false); dispararAviso("Solicitado!", "sucesso");
+        saveM(); alternarLoginRegistro(false); dispararAviso("Solicitado!", "sucesso");
+    }
+
+    function aprovarMembro(i) {
+        membros[i].aprovado = true;
+        saveM();
+        renderMembros();
     }
 
     function abrirSetor(n) { 
@@ -160,13 +168,13 @@
             let v = parseFloat(n) || 0; let it = memoria[window.setorAtivo][i];
             if(operacaoAtual === 'set') it.qtd = v; else if(operacaoAtual === 'add') it.qtd += v; else if(operacaoAtual === 'sub') it.qtd -= v;
             else if(operacaoAtual === 'mul') it.qtd *= v; else if(operacaoAtual === 'div') it.qtd = v !== 0 ? it.qtd/v : it.qtd;
-            it.qtd = Math.round(it.qtd * 100) / 100; render();
+            it.qtd = isNaN(it.qtd) ? 0 : Math.round(it.qtd * 100) / 100; render();
         }
     }
 
     function adicionarItemNovo() {
         const c = document.getElementById('novoCod').value; const it = document.getElementById('novoItem').value; const p = document.getElementById('novoPreco').value || "R$ 0,00"; const q = document.getElementById('novoQtd').value || "0";
-        if(!c || !it) return; memoria[window.setorAtivo].push({ cod: c, item: it, qtd: parseFloat(q), preco: p }); render();
+        if(!c || !it) return; memoria[window.setorAtivo].push({ cod: c, item: it, qtd: q, preco: p }); render();
         document.getElementById('novoCod').value = ""; document.getElementById('novoItem').value = ""; document.getElementById('novoPreco').value = ""; document.getElementById('novoQtd').value = "";
     }
 
@@ -182,7 +190,7 @@
 
     function enviarWhatsAppGeral() {
         let txt = "*Relatório - Gabriel*%0A%0A"; let d = false;
-        Object.keys(memoria).forEach(s => { const it = memoria[s].filter(x => x.qtd > 0); if(it.length > 0) { d = true; txt += `--- *${s.toUpperCase()}* ---%0A`; it.forEach(i => txt += `📦 ${i.item} | Qtd: ${i.qtd}%0A`); } });
+        Object.keys(memoria).forEach(s => { const it = memoria[s].filter(x => x.qtd != 0); if(it.length > 0) { d = true; txt += `--- *${s.toUpperCase()}* ---%0A`; it.forEach(i => txt += `📦 ${i.item} | Qtd: ${i.qtd}%0A`); } });
         if(d) window.open(`https://wa.me/?text=${txt}`, '_blank');
     }
 
@@ -193,10 +201,9 @@
     function renderMembros() {
         const c = document.getElementById('corpoMembros'); c.innerHTML = "";
         membros.forEach((m, i) => {
-            // Logica de aprovação corrigida para salvar imediatamente
             const ac = m.aprovado ? 
                 `<button style="background:red; color:white; border:none; padding:4px; border-radius:4px;" onclick="membros.splice(${i},1); saveM(); renderMembros();">❌</button>` : 
-                `<button style="background:green; color:white; border:none; padding:4px; border-radius:4px;" onclick="membros[${i}].aprovado=true; saveM(); renderMembros();">✅</button>`;
+                `<button style="background:green; color:white; border:none; padding:4px; border-radius:4px;" onclick="aprovarMembro(${i})">✅</button>`;
             
             c.innerHTML += `<tr><td>${m.user}</td><td>${m.pass}</td><td>
                 <select onchange="membros[${i}].cargo=this.value; saveM();" style="font-size:10px;">
@@ -209,13 +216,12 @@
         });
     }
 
-    function saveM() { localStorage.setItem(K_MEMB, JSON.stringify(membros)); }
-    function salvarAgoraManual() { localStorage.setItem(K_DATA, JSON.stringify(memoria)); saveM(); alert("Salvo com sucesso!"); }
+    function salvarAgoraManual() { localStorage.setItem(K_DATA, JSON.stringify(memoria)); saveM(); alert("Salvo!"); }
     function fecharFoto() { document.getElementById('photoOverlay').classList.add('hidden'); }
     function logout() { location.reload(); }
     function voltar() { document.getElementById('planilhaSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
     function voltarAoMenu() { document.getElementById('membrosSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
-    function zerarQuantidades() { if(confirm("Zerar todas as quantidades deste setor?")) { memoria[window.setorAtivo].forEach(i => i.qtd = 0); render(); } }
+    function zerarQuantidades() { if(confirm("Zerar tudo?")) { memoria[window.setorAtivo].forEach(i => i.qtd = 0); render(); } }
 </script>
 </body>
 </html>
