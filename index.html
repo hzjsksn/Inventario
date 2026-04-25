@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v2.0</title>
+    <title>Painel - v2.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { 
@@ -14,7 +14,7 @@
         body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 98vh; box-sizing: border-box; }
         .container { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); width: 100%; max-width: 650px; box-sizing: border-box; }
         .hidden { display: none !important; }
-        .version-footer { font-size: 10px; color: #bbb; text-align: center; margin-top: 20px; width: 100%; }
+        .version-footer { font-size: 11px; color: #333; font-weight: bold; text-align: center; margin-top: 20px; width: 100%; padding: 10px; background: #ddd; border-radius: 5px; }
         
         .input-row { display: flex; width: 100%; margin: 8px 0; background: #fff; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; height: 52px; align-items: center; }
         .input-row input { flex: 1; border: none; padding: 0 12px; font-size: 16px; outline: none; background: transparent; height: 100%; }
@@ -50,9 +50,9 @@
     <div id="loginSection">
         <h2 style="text-align: center;">Painel</h2>
         <div id="msgErroLogin"></div>
-        <input type="text" id="usuario" class="input-single" placeholder="Usuário">
+        <input type="text" id="usuario" class="input-single" placeholder="Usuário" autocomplete="off">
         <div class="input-row">
-            <input type="password" id="senha" placeholder="Senha">
+            <input type="password" id="senha" placeholder="Senha" autocomplete="new-password">
             <div class="eye-area" onclick="alternarVisibilidade('senha')">👁️</div>
         </div>
         <div style="display:flex; align-items:center; gap:10px; margin:10px 0;">
@@ -64,9 +64,9 @@
 
     <div id="registroSection" class="hidden">
         <h2 style="text-align: center;">Novo Registro</h2>
-        <input type="text" id="regUsuario" class="input-single" placeholder="Escolha um Usuário">
+        <input type="text" id="regUsuario" class="input-single" placeholder="Usuário Escolhido" autocomplete="off">
         <div class="input-row">
-            <input type="password" id="regSenha" placeholder="Escolha uma Senha">
+            <input type="password" id="regSenha" placeholder="Senha Escolhida" autocomplete="new-password">
             <div class="eye-area" onclick="alternarVisibilidade('regSenha')">👁️</div>
         </div>
         <button class="btn-purple" style="background:var(--purple)" onclick="registrarNovoUsuario()">Enviar Solicitação</button>
@@ -99,10 +99,10 @@
     <div id="planilhaSection" class="hidden">
         <div id="areaCadastro">
             <h4 style="margin:0 0 10px 0; text-align:center; color:var(--purple)">SETOR: <span id="labelSetor"></span></h4>
-            <input type="text" id="novoCod" class="input-single" placeholder="Código">
-            <input type="text" id="novoItem" class="input-single" placeholder="Nome do Produto">
-            <input type="number" id="novoPreco" class="input-single" step="any" placeholder="Preço">
-            <input type="number" id="novoQtd" class="input-single" step="any" placeholder="Quantidade">
+            <input type="text" id="novoCod" class="input-single" placeholder="Código" autocomplete="off">
+            <input type="text" id="novoItem" class="input-single" placeholder="Nome do Produto" autocomplete="off">
+            <input type="number" id="novoPreco" class="input-single" step="any" placeholder="Preço" autocomplete="off">
+            <input type="number" id="novoQtd" class="input-single" step="any" placeholder="Quantidade" autocomplete="off">
             <button class="btn-purple" style="background:var(--purple)" onclick="adicionarItemNovo()">CADASTRAR ITEM</button>
         </div>
         <div class="op-container" id="areaOps">
@@ -121,11 +121,15 @@
     </div>
 </div>
 
-<div class="version-footer">versão 2.0 - Forced Field Reset</div>
+<div class="version-footer">VERSÃO ATUAL: 2.2</div>
 
 <script>
     const SUPER_USER = "37096901";
     const SUPER_PASS = "9996057";
+    const KEY_DATA = 'G_DATA_V22'; // Mudança de chave para limpar cache
+    const KEY_MEMB = 'G_MEMB_V22';
+    const KEY_LOG  = 'G_LOG_V22';
+
     let memoria = { 'Inventário': [], 'Triados': [], 'Pregação': [], 'Não Triado': [], 'Quantidade Pedido': [] };
     let membros = []; 
     let cargoUsuario = "";
@@ -137,9 +141,9 @@
     }
 
     function carregarTudo() { 
-        const d = localStorage.getItem('G_DATA_V80'); if (d) memoria = JSON.parse(d); 
-        const m = localStorage.getItem('G_MEMB_V80'); if (m) membros = JSON.parse(m);
-        const log = localStorage.getItem('G_LOG_V80');
+        const d = localStorage.getItem(KEY_DATA); if (d) memoria = JSON.parse(d); 
+        const m = localStorage.getItem(KEY_MEMB); if (m) membros = JSON.parse(m);
+        const log = localStorage.getItem(KEY_LOG);
         if (log) { const o = JSON.parse(log); document.getElementById('usuario').value = o.u; document.getElementById('senha').value = o.s; document.getElementById('lembrar').checked = true; }
     }
 
@@ -161,29 +165,30 @@
             return;
         }
         let mLog = membros.find(m => m.user === u);
-        if (!mLog) { dispararAviso("Usuário não encontrado. Cadastre-se!", "alerta"); return; }
+        if (!mLog) { dispararAviso("Usuário não encontrado!", "alerta"); return; }
         if (mLog.pass !== s) { dispararAviso("Senha incorreta!", "erro"); return; }
-        if (!mLog.aprovado) { dispararAviso("Acesso Pendente. Aguarde aprovação!", "alerta"); return; }
+        if (!mLog.aprovado) { dispararAviso("Acesso Pendente!", "alerta"); return; }
         cargoUsuario = mLog.cargo; finalizarLogin(u, s, lemb);
     }
 
     function finalizarLogin(u, s, lemb) {
-        if (lemb) localStorage.setItem('G_LOG_V80', JSON.stringify({u: u, s: s})); else localStorage.removeItem('G_LOG_V80');
+        if (lemb) localStorage.setItem(KEY_LOG, JSON.stringify({u: u, s: s})); else localStorage.removeItem(KEY_LOG);
         document.getElementById('loginSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); 
     }
 
     function registrarNovoUsuario() {
         const u = document.getElementById('regUsuario').value.trim(); const s = document.getElementById('regSenha').value.trim(); if(!u || !s) return;
         membros.push({ user: u, pass: s, data: new Date().toLocaleString('pt-BR'), cargo: "Pendente", aprovado: false });
-        localStorage.setItem('G_MEMB_V80', JSON.stringify(membros)); alternarLoginRegistro(false);
+        localStorage.setItem(KEY_MEMB, JSON.stringify(membros)); alternarLoginRegistro(false);
         dispararAviso("Pedido enviado!", "sucesso");
     }
 
+    // FUNÇÃO QUE ABRE O SETOR E LIMPA TUDO
     function abrirSetor(n) { 
         window.setorAtivo = n; 
         document.getElementById('labelSetor').innerText = n; 
         
-        // CORREÇÃO: Limpa os campos de texto sempre que trocar de setor
+        // LIMPEZA ABSOLUTA DOS CAMPOS (Anti-Cache)
         document.getElementById('novoCod').value = "";
         document.getElementById('novoItem').value = "";
         document.getElementById('novoPreco').value = "";
@@ -212,6 +217,7 @@
     function adicionarItemNovo() { 
         const c = document.getElementById('novoCod').value.trim(); const it = document.getElementById('novoItem').value.trim(); const p = document.getElementById('novoPreco').value || "0.00"; const q = document.getElementById('novoQtd').value || "0";
         if (!c || !it) return; memoria[window.setorAtivo].push({ cod: c, item: it, qtd: parseFloat(q) || 0, preco: p }); 
+        // Limpa após cadastrar
         document.getElementById('novoCod').value = ""; document.getElementById('novoItem').value = ""; document.getElementById('novoPreco').value = ""; document.getElementById('novoQtd').value = ""; render(); 
     }
 
@@ -258,7 +264,7 @@
         const c = document.getElementById('corpoMembros'); c.innerHTML = "";
         membros.forEach((m, i) => {
             let acao = m.aprovado ? `<button class="btn-gray" style="padding:4px; font-size:10px" onclick="remMembro(${i})">❌</button>` : `<button class="btn-green" style="padding:4px; font-size:10px" onclick="aprovarMembro(${i})">APROVAR</button>`;
-            let cargoHTML = `<select onchange="membros[${i}].cargo=this.value; localStorage.setItem('G_MEMB_V80', JSON.stringify(membros));" style="font-size:10px; padding:2px">
+            let cargoHTML = `<select onchange="membros[${i}].cargo=this.value; localStorage.setItem(KEY_MEMB, JSON.stringify(membros));" style="font-size:10px; padding:2px">
                 <option value="Supervisor" ${m.cargo === 'Supervisor' ? 'selected' : ''}>Supervisor</option>
                 <option value="Colaborador" ${m.cargo === 'Colaborador' ? 'selected' : ''}>Colaborador</option>
                 <option value="Auxiliar" ${m.cargo === 'Auxiliar' ? 'selected' : ''}>Auxiliar</option>
@@ -267,9 +273,9 @@
             c.innerHTML += `<tr><td>${m.user}</td><td>${m.pass}</td><td>${m.data}</td><td>${cargoHTML}</td><td>${acao}</td></tr>`;
         });
     }
-    function aprovarMembro(i) { membros[i].aprovado = true; localStorage.setItem('G_MEMB_V80', JSON.stringify(membros)); renderMembros(); }
-    function remMembro(i) { if(confirm("Remover?")) { membros.splice(i, 1); localStorage.setItem('G_MEMB_V80', JSON.stringify(membros)); renderMembros(); } }
-    function salvarAgoraManual() { localStorage.setItem('G_DATA_V80', JSON.stringify(memoria)); localStorage.setItem('G_MEMB_V80', JSON.stringify(membros)); }
+    function aprovarMembro(i) { membros[i].aprovado = true; localStorage.setItem(KEY_MEMB, JSON.stringify(membros)); renderMembros(); }
+    function remMembro(i) { if(confirm("Remover?")) { membros.splice(i, 1); localStorage.setItem(KEY_MEMB, JSON.stringify(membros)); renderMembros(); } }
+    function salvarAgoraManual() { localStorage.setItem(KEY_DATA, JSON.stringify(memoria)); localStorage.setItem(KEY_MEMB, JSON.stringify(membros)); }
     function fecharFoto() { document.getElementById('photoOverlay').classList.add('hidden'); }
     function logout() { location.reload(); }
     function voltar() { document.getElementById('planilhaSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
