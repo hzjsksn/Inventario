@@ -3,40 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v2.4</title>
+    <title>Painel - v2.8</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        :root { 
-            --bg: #f0f2f5; --card: #ffffff; --text: #333; --qtd-bg: #fff9e6;
-            --primary: #007bff; --secondary: #6c757d; --success: #28a745;
-            --info: #17a2b8; --warning: #ff9800; --danger: #dc3545; --purple: #6f42c1;
-        }
+        :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --qtd-bg: #fff9e6; --primary: #007bff; --secondary: #6c757d; --success: #28a745; --warning: #ff9800; --danger: #dc3545; --purple: #6f42c1; }
         body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 98vh; box-sizing: border-box; }
         .container { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); width: 100%; max-width: 650px; box-sizing: border-box; }
         .hidden { display: none !important; }
-        .version-footer { font-size: 11px; color: #333; font-weight: bold; text-align: center; margin-top: 20px; width: 100%; padding: 10px; background: #ddd; border-radius: 5px; }
-        
-        .input-row { display: flex; width: 100%; margin: 8px 0; background: #fff; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; height: 52px; align-items: center; }
+        .version-footer { font-size: 10px; color: #bbb; text-align: center; margin-top: 20px; width: 100%; }
+        .input-row { display: flex; width: 100%; margin: 8px 0; background: #fff; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; height: 50px; align-items: center; }
         .input-row input { flex: 1; border: none; padding: 0 12px; font-size: 16px; outline: none; background: transparent; height: 100%; }
-        .eye-area { width: 60px; height: 100%; background: #f8f9fa; border-left: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-
-        .input-single { width: 100%; height: 52px; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
-        .op-container { display: flex; gap: 8px; justify-content: center; margin: 15px 0; background: #f1f3f5; padding: 10px; border-radius: 10px; width: 100%; box-sizing: border-box; }
-        .btn-op { flex: 1; padding: 12px 0; font-size: 18px; border: none; background: var(--secondary); color: white; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-op.active { background: var(--success); transform: scale(1.05); }
-
+        .eye-area { width: 55px; height: 100%; background: #f8f9fa; border-left: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .input-single { width: 100%; height: 50px; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .op-container { display: flex; gap: 8px; justify-content: center; margin: 15px 0; background: #f1f3f5; padding: 10px; border-radius: 10px; width: 100%; }
+        .btn-op { flex: 1; padding: 12px 0; font-size: 18px; border: none; background: var(--secondary); color: white; border-radius: 6px; cursor: pointer; }
+        .btn-op.active { background: var(--success); }
         button { border: none; border-radius: 8px; cursor: pointer; font-weight: bold; padding: 14px; width: 100%; margin-top: 10px; font-size: 14px; color: white; text-transform: uppercase; }
-        .btn-blue { background: var(--primary); }
-        .btn-purple { background: var(--purple); }
-        .btn-green { background: var(--success); }
-        .btn-gray { background: var(--secondary); }
-        
-        #msgErroLogin { padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; text-align: center; margin-bottom: 15px; border: 1px solid transparent; display: none; }
-        .link-acao { color: var(--primary); cursor: pointer; text-decoration: underline; font-size: 13px; text-align: center; display: block; margin-top: 15px; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; margin-bottom: 20px; }
+        .btn-blue { background: var(--primary); } .btn-purple { background: var(--purple); } .btn-green { background: var(--success); } .btn-gray { background: var(--secondary); }
+        #msgErroLogin { padding: 10px; border-radius: 6px; font-size: 13px; font-weight: bold; text-align: center; margin-bottom: 10px; display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
         th, td { border: 1px solid #dee2e6; padding: 8px 4px; text-align: left; font-size: 11px; }
-        .qtd-editavel { cursor: pointer; background: var(--qtd-bg); font-weight: bold; text-align: center; font-size: 16px; border: 2px solid #ffeeba; }
+        .qtd-editavel { cursor: pointer; background: var(--qtd-bg); text-align: center; font-weight: bold; }
     </style>
 </head>
 <body onload="carregarTudo()">
@@ -52,244 +39,183 @@
         <div id="msgErroLogin"></div>
         <input type="text" id="usuario" class="input-single" placeholder="Usuário" autocomplete="off">
         <div class="input-row">
-            <input type="password" id="senha" placeholder="Senha" autocomplete="new-password">
+            <input type="password" id="senha" placeholder="Senha">
             <div class="eye-area" onclick="alternarVisibilidade('senha')">👁️</div>
         </div>
         <div style="display:flex; align-items:center; gap:10px; margin:10px 0;">
-            <input type="checkbox" id="lembrar" style="width:18px; height:18px;"> <label for="lembrar" style="font-size:14px; color:#555;">Lembrar acesso</label>
+            <input type="checkbox" id="lembrar" style="width:18px; height:18px;"> <label style="font-size:14px; color:#555;">Lembrar acesso</label>
         </div>
         <button class="btn-blue" onclick="acessar()">Entrar</button>
-        <span class="link-acao" onclick="alternarLoginRegistro(true)">Solicitar Registro</span>
+        <span style="color:var(--primary); cursor:pointer; text-decoration:underline; font-size:13px; text-align:center; display:block; margin-top:15px;" onclick="alternarLoginRegistro(true)">Solicitar Registro</span>
     </div>
 
     <div id="registroSection" class="hidden">
         <h2 style="text-align: center;">Novo Registro</h2>
-        <input type="text" id="regUsuario" class="input-single" placeholder="Usuário Escolhido" autocomplete="off">
+        <input type="text" id="regUsuario" class="input-single" placeholder="Usuário">
         <div class="input-row">
-            <input type="password" id="regSenha" placeholder="Senha Escolhida" autocomplete="new-password">
+            <input type="password" id="regSenha" placeholder="Senha">
             <div class="eye-area" onclick="alternarVisibilidade('regSenha')">👁️</div>
         </div>
-        <button class="btn-purple" style="background:var(--purple)" onclick="registrarNovoUsuario()">Enviar Solicitação</button>
-        <span class="link-acao" onclick="alternarLoginRegistro(false)">Voltar ao Login</span>
+        <button class="btn-purple" onclick="registrarNovoUsuario()">Enviar</button>
+        <span style="color:var(--primary); cursor:pointer; text-decoration:underline; font-size:13px; text-align:center; display:block; margin-top:15px;" onclick="alternarLoginRegistro(false)">Voltar</span>
     </div>
 
     <div id="menuSection" class="hidden">
-        <h2 style="text-align: center;">Menu Principal</h2>
+        <h2 style="text-align: center;">Menu</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <button class="btn-blue" onclick="abrirSetor('Inventário')">Inventário</button>
             <button class="btn-blue" onclick="abrirSetor('Triados')">Triados</button>
             <button class="btn-blue" onclick="abrirSetor('Pregação')">Pregação</button>
             <button class="btn-blue" onclick="abrirSetor('Não Triado')">Não Triado</button>
-            <button id="btnMembros" class="btn-purple hidden" style="background:var(--purple); grid-column: span 2;" onclick="abrirMembros()">Gestão de Membros (ADM)</button>
+            <button id="btnMembros" class="btn-purple hidden" style="grid-column: span 2;" onclick="abrirMembros()">Membros (ADM)</button>
         </div>
         <button class="btn-gray" onclick="logout()">Sair</button>
     </div>
 
     <div id="membrosSection" class="hidden">
-        <h2 style="text-align: center;">Controle Supremo</h2>
+        <h2 style="text-align: center;">Gestão de Membros</h2>
         <div style="overflow-x: auto;">
             <table>
-                <thead><tr><th>Usuário</th><th>Senha</th><th>Data</th><th>Cargo</th><th>Ação</th></tr></thead>
+                <thead><tr><th>Usuário</th><th>Senha</th><th>Cargo</th><th>Ação</th></tr></thead>
                 <tbody id="corpoMembros"></tbody>
             </table>
         </div>
-        <button class="btn-gray" onclick="voltarAoMenu()">⬅ VOLTAR</button>
+        <button class="btn-gray" onclick="voltarAoMenu()">VOLTAR</button>
     </div>
 
     <div id="planilhaSection" class="hidden">
         <div id="areaCadastro">
             <h4 style="margin:0 0 10px 0; text-align:center; color:var(--purple)">SETOR: <span id="labelSetor"></span></h4>
-            
             <input type="tel" id="novoCod" class="input-single" placeholder="Código (Só Números)" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-            
             <input type="text" id="novoItem" class="input-single" placeholder="Nome do Produto">
-            
-            <input type="tel" id="novoPreco" class="input-single" placeholder="R$ 0,00" oninput="mascaraPreco(this)">
-            
-            <input type="tel" id="novoQtd" class="input-single" placeholder="Quantidade (Só Números)" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-            
-            <button class="btn-purple" style="background:var(--purple)" onclick="adicionarItemNovo()">CADASTRAR ITEM</button>
+            <input type="tel" id="novoPreco" class="input-single" placeholder="R$ 0,00" oninput="maskMoeda(this)">
+            <input type="tel" id="novoQtd" class="input-single" placeholder="Qtd (Só Números)" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+            <button class="btn-purple" onclick="adicionarItemNovo()">Cadastrar</button>
         </div>
-        <div class="op-container" id="areaOps">
+        <div class="op-container">
             <button id="op-set" class="btn-op active" onclick="setOp('set')">✎</button>
             <button id="op-add" class="btn-op" onclick="setOp('add')">+</button>
             <button id="op-sub" class="btn-op" onclick="setOp('sub')">-</button>
             <button id="op-mul" class="btn-op" onclick="setOp('mul')">×</button>
             <button id="op-div" class="btn-op" onclick="setOp('div')">÷</button>
         </div>
-        <div id="areaCapture" style="background: white; padding: 10px; border-radius: 5px;"><div id="tabelasSetores"></div></div>
-        <button class="btn-green" style="background:var(--success)" onclick="salvarAgoraManual()">💾 SALVAR DADOS</button>
-        <button class="btn-cyan" style="background:var(--info)" onclick="tirarFoto()">📸 PRINT SCREEN</button>
-        <button class="btn-green" style="background: #25d366;" onclick="enviarWhatsAppGeral()">📲 WHATSAPP (GERAL)</button>
-        <button id="btnZerar" class="btn-orange" style="background:var(--warning)" onclick="zerarQuantidades()">🔄 ZERAR QUANTIDADES</button>
-        <button class="btn-gray" onclick="voltar()">⬅ VOLTAR</button>
+        <div id="areaCapture" style="background:white; padding:5px;"><div id="tabelasSetores"></div></div>
+        <button class="btn-green" onclick="salvarAgoraManual()">💾 SALVAR</button>
+        <button class="btn-blue" style="background:#17a2b8" onclick="tirarFoto()">📸 PRINT</button>
+        <button class="btn-green" style="background:#25d366;" onclick="enviarWhatsAppGeral()">📲 WHATSAPP</button>
+        <button id="btnZerar" style="background:var(--warning)" onclick="zerarQuantidades()">🔄 ZERAR</button>
+        <button class="btn-gray" onclick="voltar()">VOLTAR</button>
     </div>
 </div>
 
-<div class="version-footer">VERSÃO ATUAL: 2.4</div>
+<div class="version-footer">versão 2.8</div>
 
 <script>
-    const SUPER_USER = "37096901";
-    const SUPER_PASS = "9996057";
-    const KEY_DATA = 'G_DATA_V24';
-    const KEY_MEMB = 'G_MEMB_V24';
-    const KEY_LOG  = 'G_LOG_V24';
-
+    const SUPER_USER = "37096901"; const SUPER_PASS = "9996057";
+    const K_DATA = 'G_DATA_V27'; const K_MEMB = 'G_MEMB_V27'; const K_LOG = 'G_LOG_V27';
     let memoria = { 'Inventário': [], 'Triados': [], 'Pregação': [], 'Não Triado': [], 'Quantidade Pedido': [] };
-    let membros = []; 
-    let cargoUsuario = "";
-    let operacaoAtual = 'set';
+    let membros = []; let cargoUsuario = ""; let operacaoAtual = 'set';
 
-    function mascaraPreco(input) {
-        let v = input.value.replace(/\D/g, "");
-        v = (v / 100).toFixed(2).replace(".", ",");
-        v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
-        input.value = v;
-    }
-
-    function alternarVisibilidade(id) {
-        const input = document.getElementById(id);
-        input.type = (input.type === "password") ? "text" : "password";
-    }
-
+    function maskMoeda(i) { let v = i.value.replace(/\D/g, ""); v = (v/100).toFixed(2).replace(".",","); i.value = "R$ " + v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1."); }
+    function alternarVisibilidade(id) { const i = document.getElementById(id); i.type = i.type === "password" ? "text" : "password"; }
+    
     function carregarTudo() { 
-        const d = localStorage.getItem(KEY_DATA); if (d) memoria = JSON.parse(d); 
-        const m = localStorage.getItem(KEY_MEMB); if (m) membros = JSON.parse(m);
-        const log = localStorage.getItem(KEY_LOG);
-        if (log) { const o = JSON.parse(log); document.getElementById('usuario').value = o.u; document.getElementById('senha').value = o.s; document.getElementById('lembrar').checked = true; }
+        const d = localStorage.getItem(K_DATA); if(d) memoria = JSON.parse(d);
+        const m = localStorage.getItem(K_MEMB); if(m) membros = JSON.parse(m);
+        const l = localStorage.getItem(K_LOG); if(l) { const o=JSON.parse(l); document.getElementById('usuario').value=o.u; document.getElementById('senha').value=o.s; document.getElementById('lembrar').checked=true; }
     }
 
-    function dispararAviso(texto, tipo) {
-        const msgDiv = document.getElementById('msgErroLogin');
-        msgDiv.innerText = texto; msgDiv.style.display = "block";
-        if(tipo === "erro") { msgDiv.style.background = "#ffebee"; msgDiv.style.color = "#c62828"; }
-        else if(tipo === "alerta") { msgDiv.style.background = "#fff3e0"; msgDiv.style.color = "#ef6c00"; }
-        else { msgDiv.style.background = "#e8f5e9"; msgDiv.style.color = "#2e7d32"; }
+    function dispararAviso(t, tipo) { const d = document.getElementById('msgErroLogin'); d.innerText = t; d.style.display = "block"; d.style.background = tipo === "erro" ? "#ffebee" : "#e8f5e9"; d.style.color = tipo === "erro" ? "#c62828" : "#2e7d32"; }
+    
+    function acessar() {
+        const u = document.getElementById('usuario').value.trim(); const s = document.getElementById('senha').value.trim(); const lemb = document.getElementById('lembrar').checked;
+        if(u === SUPER_USER && s === SUPER_PASS) { cargoUsuario = "Supervisor"; document.getElementById('btnMembros').classList.remove('hidden'); return finalizarLogin(u,s,lemb); }
+        let m = membros.find(x => x.user === u);
+        if(!m) return dispararAviso("Não cadastrado!", "erro");
+        if(m.pass !== s) return dispararAviso("Senha errada!", "erro");
+        if(!m.aprovado) return dispararAviso("Acesso Pendente!", "erro");
+        cargoUsuario = m.cargo; finalizarLogin(u,s,lemb);
     }
 
-    function acessar() { 
-        const u = document.getElementById('usuario').value.trim(); 
-        const s = document.getElementById('senha').value.trim(); 
-        const lemb = document.getElementById('lembrar').checked;
-        if (u === SUPER_USER) {
-            if (s === SUPER_PASS) { cargoUsuario = "Super"; document.getElementById('btnMembros').classList.remove('hidden'); finalizarLogin(u, s, lemb); }
-            else { dispararAviso("Senha incorreta!", "erro"); }
-            return;
-        }
-        let mLog = membros.find(m => m.user === u);
-        if (!mLog) { dispararAviso("Usuário não encontrado!", "alerta"); return; }
-        if (mLog.pass !== s) { dispararAviso("Senha incorreta!", "erro"); return; }
-        if (!mLog.aprovado) { dispararAviso("Acesso Pendente!", "alerta"); return; }
-        cargoUsuario = mLog.cargo; finalizarLogin(u, s, lemb);
-    }
-
-    function finalizarLogin(u, s, lemb) {
-        if (lemb) localStorage.setItem(KEY_LOG, JSON.stringify({u: u, s: s})); else localStorage.removeItem(KEY_LOG);
-        document.getElementById('loginSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); 
-    }
-
+    function finalizarLogin(u,s,l) { if(l) localStorage.setItem(K_LOG, JSON.stringify({u,s})); else localStorage.removeItem(K_LOG); document.getElementById('loginSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
+    
     function registrarNovoUsuario() {
         const u = document.getElementById('regUsuario').value.trim(); const s = document.getElementById('regSenha').value.trim(); if(!u || !s) return;
-        membros.push({ user: u, pass: s, data: new Date().toLocaleString('pt-BR'), cargo: "Pendente", aprovado: false });
-        localStorage.setItem(KEY_MEMB, JSON.stringify(membros)); alternarLoginRegistro(false);
-        dispararAviso("Pedido enviado!", "sucesso");
+        membros.push({ user: u, pass: s, data: new Date().toLocaleDateString(), cargo: "Colaborador", aprovado: false });
+        localStorage.setItem(K_MEMB, JSON.stringify(membros)); alternarLoginRegistro(false); dispararAviso("Solicitado!", "sucesso");
     }
 
     function abrirSetor(n) { 
-        window.setorAtivo = n; 
-        document.getElementById('labelSetor').innerText = n; 
-        document.getElementById('novoCod').value = "";
-        document.getElementById('novoItem').value = "";
-        document.getElementById('novoPreco').value = "";
-        document.getElementById('novoQtd').value = "";
-        const isAux = (cargoUsuario === "Auxiliar");
-        document.getElementById('areaCadastro').classList.toggle('hidden', isAux);
-        document.getElementById('areaOps').classList.toggle('hidden', isAux);
-        document.getElementById('btnZerar').classList.toggle('hidden', isAux);
-        document.getElementById('menuSection').classList.add('hidden'); 
-        document.getElementById('planilhaSection').classList.remove('hidden'); 
-        render(); 
+        window.setorAtivo = n; document.getElementById('labelSetor').innerText = n;
+        document.getElementById('novoCod').value = ""; document.getElementById('novoItem').value = ""; document.getElementById('novoPreco').value = ""; document.getElementById('novoQtd').value = "";
+        const isAux = cargoUsuario === "Auxiliar";
+        document.getElementById('areaCadastro').classList.toggle('hidden', isAux); document.getElementById('btnZerar').classList.toggle('hidden', isAux);
+        document.getElementById('menuSection').classList.add('hidden'); document.getElementById('planilhaSection').classList.remove('hidden'); render();
     }
 
-    function setOp(op) { operacaoAtual = op; document.querySelectorAll('.btn-op').forEach(btn => btn.classList.remove('active')); document.getElementById('op-' + op).classList.add('active'); }
+    function setOp(op) { operacaoAtual = op; document.querySelectorAll('.btn-op').forEach(b => b.classList.remove('active')); document.getElementById('op-'+op).classList.add('active'); }
     
-    function calc(i) { 
-        const n = prompt("Valor:"); 
-        if (n !== null && n !== "") { 
-            const v = parseFloat(n) || 0; let item = memoria[window.setorAtivo][i]; 
-            if (operacaoAtual === 'set') item.qtd = v; else if (operacaoAtual === 'add') item.qtd += v; else if (operacaoAtual === 'sub') item.qtd -= v; 
-            else if (operacaoAtual === 'mul') item.qtd *= v; else if (operacaoAtual === 'div') item.qtd = v !== 0 ? item.qtd / v : item.qtd;
-            item.qtd = Math.round(item.qtd * 100) / 100; render(); 
-        } 
+    function calc(i) {
+        const n = prompt("Valor:"); if(n !== null && n !== "") {
+            let v = parseFloat(n) || 0; let it = memoria[window.setorAtivo][i];
+            if(operacaoAtual === 'set') it.qtd = v; else if(operacaoAtual === 'add') it.qtd += v; else if(operacaoAtual === 'sub') it.qtd -= v;
+            else if(operacaoAtual === 'mul') it.qtd *= v; else if(operacaoAtual === 'div') it.qtd = v !== 0 ? it.qtd/v : it.qtd;
+            it.qtd = Math.round(it.qtd * 100) / 100; render();
+        }
     }
 
-    function adicionarItemNovo() { 
-        const c = document.getElementById('novoCod').value.trim(); const it = document.getElementById('novoItem').value.trim(); 
-        let p = document.getElementById('novoPreco').value || "0,00"; 
-        const q = document.getElementById('novoQtd').value || "0";
-        if (!c || !it) return; 
-        memoria[window.setorAtivo].push({ cod: c, item: it, qtd: parseFloat(q) || 0, preco: p }); 
-        document.getElementById('novoCod').value = ""; document.getElementById('novoItem').value = ""; document.getElementById('novoPreco').value = ""; document.getElementById('novoQtd').value = ""; render(); 
+    function adicionarItemNovo() {
+        const c = document.getElementById('novoCod').value; const it = document.getElementById('novoItem').value; const p = document.getElementById('novoPreco').value || "R$ 0,00"; const q = document.getElementById('novoQtd').value || "0";
+        if(!c || !it) return; memoria[window.setorAtivo].push({ cod: c, item: it, qtd: parseFloat(q), preco: p }); render();
+        document.getElementById('novoCod').value = ""; document.getElementById('novoItem').value = ""; document.getElementById('novoPreco').value = ""; document.getElementById('novoQtd').value = "";
     }
 
-    function render() { 
-        const container = document.getElementById('tabelasSetores'); container.innerHTML = `<div class="setor-titulo-captura">LISTA: ${window.setorAtivo}</div>`; 
-        const table = document.createElement('table'); table.innerHTML = `<thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th><th class="no-photo">Ação</th></tr></thead><tbody id="corpoAtivo"></tbody>`; 
-        container.appendChild(table); const corpo = document.getElementById('corpoAtivo'); 
-        memoria[window.setorAtivo].forEach((obj, i) => { 
-            const edit = (cargoUsuario === "Auxiliar") ? `<td>${obj.qtd}</td>` : `<td class="qtd-editavel" onclick="calc(${i})">${obj.qtd}</td>`;
-            corpo.innerHTML += `<tr><td>${obj.cod}</td><td>${obj.item}</td>${edit}<td>R$ ${obj.preco}</td><td class="no-photo"><button class="btn-red" style="background:var(--danger); padding:4px; font-size:10px" onclick="removerItem(${i})">❌</button></td></tr>`; 
-        }); 
+    function render() {
+        const c = document.getElementById('tabelasSetores'); c.innerHTML = `<div style="background:#eee; padding:5px; font-weight:bold; text-align:center;">${window.setorAtivo}</div>`;
+        const t = document.createElement('table'); t.innerHTML = `<thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th><th>X</th></tr></thead><tbody id="corpoAtivo"></tbody>`;
+        c.appendChild(t); const cb = document.getElementById('corpoAtivo');
+        memoria[window.setorAtivo].forEach((o, i) => {
+            const eqtd = cargoUsuario === "Auxiliar" ? `<td>${o.qtd}</td>` : `<td class="qtd-editavel" onclick="calc(${i})">${o.qtd}</td>`;
+            cb.innerHTML += `<tr><td>${o.cod}</td><td>${o.item}</td>${eqtd}<td>${o.preco}</td><td><button style="background:red; color:white; border:none; border-radius:4px; padding:2px 5px;" onclick="memoria[window.setorAtivo].splice(${i},1); render();">❌</button></td></tr>`;
+        });
     }
 
     function enviarWhatsAppGeral() {
-        let texto = "*Relatório de Produtos - Gabriel*%0A%0A"; let temDados = false;
-        Object.keys(memoria).forEach(setor => {
-            const itens = memoria[setor].filter(i => i.qtd > 0);
-            if(itens.length > 0) {
-                temDados = true; texto += `--- *SETOR: ${setor.toUpperCase()}* ---%0A`;
-                itens.forEach(i => { texto += `📦 *Cód:* ${i.cod}%0A🔹 *Prod:* ${i.item}%0A🔢 *Qtd:* ${i.qtd}%0A💰 *Preço:* ${i.preco}%0A----------%0A`; });
-            }
-        });
-        if(temDados) window.open(`https://wa.me/?text=${texto}`, '_blank');
+        let txt = "*Relatório - Gabriel*%0A%0A"; let d = false;
+        Object.keys(memoria).forEach(s => { const it = memoria[s].filter(x => x.qtd > 0); if(it.length > 0) { d = true; txt += `--- *${s.toUpperCase()}* ---%0A`; it.forEach(i => txt += `📦 ${i.item} | Qtd: ${i.qtd}%0A`); } });
+        if(d) window.open(`https://wa.me/?text=${txt}`, '_blank');
     }
 
-    function tirarFoto() { 
-        const container = document.getElementById('tabelasSetores'); const backup = container.innerHTML; const ordem = ['Triados', 'Não Triado', 'Pregação', 'Inventário'];
-        container.innerHTML = '<h3 style="text-align:center;">RELATÓRIO DE CONTAGEM</h3>';
-        ordem.forEach(s => {
-            const itens = memoria[s].filter(i => i.qtd > 0);
-            if(itens.length > 0) {
-                container.innerHTML += `<div class="setor-titulo-captura">${s}</div>`;
-                let t = `<table border="1" style="width:100%; border-collapse:collapse;"><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th></tr>`;
-                itens.forEach(i => { t += `<tr><td>${i.cod}</td><td>${i.item}</td><td>${i.qtd}</td><td>R$ ${i.preco}</td></tr>`; });
-                container.innerHTML += t + `</table>`;
-            }
-        });
-        setTimeout(() => { html2canvas(document.getElementById('areaCapture'), { scale: 2 }).then(canvas => { document.getElementById('resultImage').src = canvas.toDataURL(); document.getElementById('photoOverlay').classList.remove('hidden'); container.innerHTML = backup; }); }, 500); 
-    }
-
-    function alternarLoginRegistro(ir) { document.getElementById('loginSection').classList.toggle('hidden', ir); document.getElementById('registroSection').classList.toggle('hidden', !ir); }
+    function tirarFoto() { html2canvas(document.getElementById('areaCapture')).then(canvas => { document.getElementById('resultImage').src = canvas.toDataURL(); document.getElementById('photoOverlay').classList.remove('hidden'); }); }
+    function alternarLoginRegistro(r) { document.getElementById('loginSection').classList.toggle('hidden', r); document.getElementById('registroSection').classList.toggle('hidden', !r); }
     function abrirMembros() { document.getElementById('menuSection').classList.add('hidden'); document.getElementById('membrosSection').classList.remove('hidden'); renderMembros(); }
+    
     function renderMembros() {
         const c = document.getElementById('corpoMembros'); c.innerHTML = "";
         membros.forEach((m, i) => {
-            let acao = m.aprovado ? `<button class="btn-gray" style="padding:4px; font-size:10px" onclick="remMembro(${i})">❌</button>` : `<button class="btn-green" style="padding:4px; font-size:10px" onclick="aprovarMembro(${i})">APROVAR</button>`;
-            let cargoHTML = `<select onchange="membros[${i}].cargo=this.value; localStorage.setItem(KEY_MEMB, JSON.stringify(membros));" style="font-size:10px; padding:2px">
-                <option value="Supervisor" ${m.cargo === 'Supervisor' ? 'selected' : ''}>Supervisor</option>
-                <option value="Colaborador" ${m.cargo === 'Colaborador' ? 'selected' : ''}>Colaborador</option>
-                <option value="Auxiliar" ${m.cargo === 'Auxiliar' ? 'selected' : ''}>Auxiliar</option>
-                ${!m.aprovado ? '<option value="Pendente" selected disabled>Pendente</option>' : ''}
-            </select>`;
-            c.innerHTML += `<tr><td>${m.user}</td><td>${m.pass}</td><td>${m.data}</td><td>${cargoHTML}</td><td>${acao}</td></tr>`;
+            // Logica de aprovação corrigida para salvar imediatamente
+            const ac = m.aprovado ? 
+                `<button style="background:red; color:white; border:none; padding:4px; border-radius:4px;" onclick="membros.splice(${i},1); saveM(); renderMembros();">❌</button>` : 
+                `<button style="background:green; color:white; border:none; padding:4px; border-radius:4px;" onclick="membros[${i}].aprovado=true; saveM(); renderMembros();">✅</button>`;
+            
+            c.innerHTML += `<tr><td>${m.user}</td><td>${m.pass}</td><td>
+                <select onchange="membros[${i}].cargo=this.value; saveM();" style="font-size:10px;">
+                    <option value="Supervisor" ${m.cargo==='Supervisor'?'selected':''}>Supervisor</option>
+                    <option value="Colaborador" ${m.cargo==='Colaborador'?'selected':''}>Colaborador</option>
+                    <option value="Auxiliar" ${m.cargo==='Auxiliar'?'selected':''}>Auxiliar</option>
+                    ${!m.aprovado ? '<option value="Pendente" selected disabled>Pendente</option>' : ''}
+                </select>
+            </td><td>${ac}</td></tr>`;
         });
     }
-    function aprovarMembro(i) { membros[i].aprovado = true; localStorage.setItem(KEY_MEMB, JSON.stringify(membros)); renderMembros(); }
-    function remMembro(i) { if(confirm("Remover?")) { membros.splice(i, 1); localStorage.setItem(KEY_MEMB, JSON.stringify(membros)); renderMembros(); } }
-    function salvarAgoraManual() { localStorage.setItem(KEY_DATA, JSON.stringify(memoria)); localStorage.setItem(KEY_MEMB, JSON.stringify(membros)); }
+
+    function saveM() { localStorage.setItem(K_MEMB, JSON.stringify(membros)); }
+    function salvarAgoraManual() { localStorage.setItem(K_DATA, JSON.stringify(memoria)); saveM(); alert("Salvo com sucesso!"); }
     function fecharFoto() { document.getElementById('photoOverlay').classList.add('hidden'); }
     function logout() { location.reload(); }
     function voltar() { document.getElementById('planilhaSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
     function voltarAoMenu() { document.getElementById('membrosSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
-    function removerItem(i) { if(confirm("Remover?")) { memoria[window.setorAtivo].splice(i, 1); render(); } }
-    function zerarQuantidades() { if(confirm("Z
+    function zerarQuantidades() { if(confirm("Zerar todas as quantidades deste setor?")) { memoria[window.setorAtivo].forEach(i => i.qtd = 0); render(); } }
+</script>
+</body>
+</html>
