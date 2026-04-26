@@ -3,161 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel Koda Store - v3.0</title>
+    <title>Painel - v3.5</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --primary: #007bff; --success: #28a745; --purple: #6f42c1; --danger: #dc3545; }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-        .container { background: var(--card); padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 600px; box-sizing: border-box; }
+        :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --qtd-bg: #fff9e6; --primary: #007bff; --secondary: #6c757d; --success: #28a745; --warning: #ff9800; --danger: #dc3545; --purple: #6f42c1; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 98vh; box-sizing: border-box; }
+        .container { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); width: 100%; max-width: 650px; box-sizing: border-box; }
         .hidden { display: none !important; }
-        input { width: 100%; height: 45px; margin: 5px 0; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { border: none; border-radius: 8px; padding: 12px; width: 100%; margin-top: 8px; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .btn-blue { background: var(--primary); }
-        .btn-purple { background: var(--purple); }
-        .btn-green { background: var(--success); }
-        .btn-red { background: var(--danger); }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; font-size: 12px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: #f8f9fa; }
-        .setor-badge { background: #6f42c1; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px; margin-bottom: 10px; display: inline-block; }
+        .version-footer { font-size: 10px; color: #bbb; text-align: center; margin-top: 20px; width: 100%; }
+        .input-row { display: flex; width: 100%; margin: 8px 0; background: #fff; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; height: 50px; align-items: center; }
+        .input-row input { flex: 1; border: none; padding: 0 12px; font-size: 16px; outline: none; background: transparent; height: 100%; }
+        .eye-area { width: 55px; height: 100%; background: #f8f9fa; border-left: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .input-single { width: 100%; height: 50px; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .op-container { display: flex; gap: 8px; justify-content: center; margin: 15px 0; background: #f1f3f5; padding: 10px; border-radius: 10px; width: 100%; }
+        .btn-op { flex: 1; padding: 12px 0; font-size: 18px; border: none; background: var(--secondary); color: white; border-radius: 6px; cursor: pointer; }
+        .btn-op.active { background: var(--success); }
+        button { border: none; border-radius: 8px; cursor: pointer; font-weight: bold; padding: 14px; width: 100%; margin-top: 10px; font-size: 14px; color: white; text-transform: uppercase; }
+        .btn-blue { background: var(--primary); } .btn-purple { background: var(--purple); } .btn-green { background: var(--success); } .btn-gray { background: var(--secondary); }
+        #msgErroLogin { padding: 10px; border-radius: 6px; font-size: 13px; font-weight: bold; text-align: center; margin-bottom: 10px; display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; background: white; margin-bottom: 15px; }
+        th, td { border: 1px solid #dee2e6; padding: 8px 4px; text-align: left; font-size: 11px; }
+        .qtd-editavel { cursor: pointer; background: var(--qtd-bg); text-align: center; font-weight: bold; }
     </style>
 </head>
-<body>
+<body onload="carregarTudo()">
+
+<div id="photoOverlay" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:5000; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+    <img id="resultImage" style="max-width:95%; max-height:80%; background:white; margin-bottom:20px; border: 2px solid white;">
+    <button class="btn-gray" onclick="fecharFoto()">FECHAR</button>
+</div>
 
 <div class="container">
     <div id="loginSection">
-        <h2 style="text-align:center">Koda Store</h2>
-        <input type="text" id="usuario" placeholder="Usuário">
-        <input type="password" id="senha" placeholder="Senha">
+        <h2 style="text-align: center;">Painel</h2>
+        <div id="msgErroLogin"></div>
+        <input type="text" id="usuario" class="input-single" placeholder="Usuário" autocomplete="off">
+        <div class="input-row">
+            <input type="password" id="senha" placeholder="Senha">
+            <div class="eye-area" onclick="alternarVisibilidade('senha')">👁️</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; margin:10px 0;">
+            <input type="checkbox" id="lembrar" style="width:18px; height:18px;"> <label style="font-size:14px;">Lembrar acesso</label>
+        </div>
         <button class="btn-blue" onclick="acessar()">Entrar</button>
+        <span style="color:var(--primary); cursor:pointer; text-decoration:underline; font-size:13px; text-align:center; display:block; margin-top:15px;" onclick="alternarLoginRegistro(true)">Solicitar Registro</span>
+    </div>
+
+    <div id="registroSection" class="hidden">
+        <h2 style="text-align: center;">Registro</h2>
+        <input type="text" id="regUsuario" class="input-single" placeholder="Usuário">
+        <div class="input-row">
+            <input type="password" id="regSenha" placeholder="Senha">
+            <div class="eye-area" onclick="alternarVisibilidade('regSenha')">👁️</div>
+        </div>
+        <button class="btn-purple" onclick="registrarNovoUsuario()">Enviar</button>
+        <span style="color:var(--primary); cursor:pointer; text-decoration:underline; font-size:13px; text-align:center; display:block; margin-top:15px;" onclick="alternarLoginRegistro(false)">Voltar</span>
     </div>
 
     <div id="menuSection" class="hidden">
-        <h3 style="text-align:center">Painel de Controle</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <button class="btn-purple" onclick="abrirSetor('Inventário')">Inventário</button>
-            <button class="btn-purple" onclick="abrirSetor('Triados')">Triados</button>
-            <button class="btn-purple" onclick="abrirSetor('Pregação')">Pregação</button>
-            <button class="btn-purple" onclick="abrirSetor('Não Triado')">Não Triado</button>
+        <h2 style="text-align: center;">Menu</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <button class="btn-blue" onclick="abrirSetor('Inventário')">Inventário</button>
+            <button class="btn-blue" onclick="abrirSetor('Triados')">Triados</button>
+            <button class="btn-blue" onclick="abrirSetor('Pregação')">Pregação</button>
+            <button class="btn-blue" onclick="abrirSetor('Não Triado')">Não Triado</button>
+            <button id="btnMembros" class="btn-purple hidden" style="grid-column: span 2;" onclick="abrirMembros()">Membros (ADM)</button>
         </div>
-        <button class="btn-red" style="margin-top:20px" onclick="location.reload()">Sair</button>
+        <button class="btn-gray" onclick="logout()">Sair</button>
+    </div>
+
+    <div id="membrosSection" class="hidden">
+        <h2 style="text-align: center;">Gestão</h2>
+        <div style="overflow-x: auto;"><table id="tableMembros"><thead><tr><th>User</th><th>Senha</th><th>Cargo</th><th>Ação</th></tr></thead><tbody id="corpoMembros"></tbody></table></div>
+        <button class="btn-gray" onclick="voltarAoMenu()">VOLTAR</button>
     </div>
 
     <div id="planilhaSection" class="hidden">
-        <div class="setor-badge" id="nomeSetorAtivo"></div>
-        <div id="formulario">
-            <input type="text" id="cod" placeholder="Cód">
-            <input type="text" id="item" placeholder="Nome do Produto">
-            <input type="number" id="qtd" placeholder="Qtd">
-            <input type="text" id="preco" placeholder="R$ 0,00">
-            <button class="btn-blue" onclick="adicionar()">Cadastrar Item</button>
+        <div id="areaCadastro">
+            <h4 style="margin:0 0 10px 0; text-align:center; color:var(--purple)">SETOR: <span id="labelSetor"></span></h4>
+            <input type="tel" id="novoCod" class="input-single" placeholder="Código" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+            <input type="text" id="novoItem" class="input-single" placeholder="Produto">
+            <input type="tel" id="novoPreco" class="input-single" placeholder="R$ 0,00" oninput="maskMoeda(this)">
+            <input type="tel" id="novoQtd" class="input-single" placeholder="Quantidade" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+            <button class="btn-purple" onclick="adicionarItemNovo()">Cadastrar</button>
         </div>
-
-        <table>
-            <thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th><th>X</th></tr></thead>
-            <tbody id="corpoTabela"></tbody>
-        </table>
-
-        <button class="btn-green" style="margin-top:20px" onclick="salvarNoFirebase()">💾 SALVAR NO FIREBASE</button>
-        <button class="btn-red" onclick="voltar()">Voltar ao Menu</button>
+        <div class="op-container">
+            <button id="op-set" class="btn-op active" onclick="setOp('set')">✎</button>
+            <button id="op-add" class="btn-op" onclick="setOp('add')">+</button>
+            <button id="op-sub" class="btn-op" onclick="setOp('sub')">-</button>
+            <button id="op-mul" class="btn-op" onclick="setOp('mul')">×</button>
+            <button id="op-div" class="btn-op" onclick="setOp('div')">÷</button>
+        </div>
+        <div id="areaCapture" style="background:white; padding:5px;"><div id="tabelasSetores"></div></div>
+        <button class="btn-green" onclick="salvarAgoraManual()">💾 SALVAR</button>
+        <button class="btn-blue" style="background:#17a2b8" onclick="tirarFoto()">📸 PRINT</button>
+        <button class="btn-green" style="background:#25d366;" onclick="enviarWhatsAppGeral()">📲 WHATSAPP</button>
+        <button id="btnZerar" style="background:var(--warning)" onclick="zerarQuantidades()">🔄 ZERAR</button>
+        <button class="btn-gray" onclick="voltar()">VOLTAR</button>
     </div>
 </div>
 
+<div class="version-footer">versão 3.5</div>
+
 <script>
-    const CHAVE = 'GABRIEL_DATA_V53';
-    const USER_MASTER = "37096901";
-    const PASS_MASTER = "9996057";
+    const CHAVE = "APP_GAB_V35";
+    const SUPER_USER = "37096901"; const SUPER_PASS = "9996057";
+    let memoria = { 'Inventário': [], 'Triados': [], 'Pregação': [], 'Não Triado': [] };
+    let membros = []; let cargoUsuario = ""; let operacaoAtual = 'set';
 
-    // Estrutura completa com todos os setores
-    let bancoDados = {
-        'Inventário': [],
-        'Triados': [],
-        'Pregação': [],
-        'Não Triado': []
-    };
+    function maskMoeda(i) { let v = i.value.replace(/\D/g, ""); v = (v/100).toFixed(2).replace(".",","); i.value = "R$ " + v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1."); }
+    function alternarVisibilidade(id) { const i = document.getElementById(id); i.type = i.type === "password" ? "text" : "password"; }
+    
+    function carregarTudo() { 
+        const d = localStorage.getItem(CHAVE + '_DATA'); if(d) memoria = JSON.parse(d);
+        const m = localStorage.getItem(CHAVE + '_MEMB'); if(m) membros = JSON.parse(m);
+        const l = localStorage.getItem(CHAVE + '_LOG'); if(l) { const o=JSON.parse(l); document.getElementById('usuario').value=o.u; document.getElementById('senha').value=o.s; document.getElementById('lembrar').checked=true; }
+    }
 
-    let setorAtual = "";
+    function saveM() { localStorage.setItem(CHAVE + '_MEMB', JSON.stringify(membros)); }
+    function saveD() { localStorage.setItem(CHAVE + '_DATA', JSON.stringify(memoria)); }
 
-    window.onload = function() {
-        const salvos = localStorage.getItem(CHAVE);
-        if (salvos) bancoDados = JSON.parse(salvos);
-    };
-
+    function dispararAviso(t, tipo) { const d = document.getElementById('msgErroLogin'); d.innerText = t; d.style.display = "block"; d.style.background = tipo === "erro" ? "#ffebee" : "#e8f5e9"; d.style.color = tipo === "erro" ? "#c62828" : "#2e7d32"; }
+    
     function acessar() {
-        const u = document.getElementById('usuario').value;
-        const s = document.getElementById('senha').value;
-        if (u === USER_MASTER && s === PASS_MASTER) {
-            document.getElementById('loginSection').classList.add('hidden');
-            document.getElementById('menuSection').classList.remove('hidden');
-        } else {
-            alert("Acesso negado!");
+        const u = document.getElementById('usuario').value.trim(); const s = document.getElementById('senha').value.trim(); const lemb = document.getElementById('lembrar').checked;
+        if(u === SUPER_USER && s === SUPER_PASS) { cargoUsuario = "Supervisor"; document.getElementById('btnMembros').classList.remove('hidden'); return finalizarLogin(u,s,lemb); }
+        let m = membros.find(x => x.user === u);
+        if(!m) return dispararAviso("Não cadastrado!", "erro");
+        if(m.pass !== s) return dispararAviso("Senha errada!", "erro");
+        if(!m.aprovado) return dispararAviso("Pendente!", "erro");
+        cargoUsuario = m.cargo; finalizarLogin(u,s,lemb);
+    }
+
+    function finalizarLogin(u,s,l) { if(l) localStorage.setItem(CHAVE + '_LOG', JSON.stringify({u,s})); else localStorage.removeItem(CHAVE + '_LOG'); document.getElementById('loginSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
+    
+    function registrarNovoUsuario() {
+        const u = document.getElementById('regUsuario').value.trim(); const s = document.getElementById('regSenha').value.trim(); if(!u || !s) return;
+        membros.push({ user: u, pass: s, data: new Date().toLocaleDateString(), cargo: "Colaborador", aprovado: false });
+        saveM(); alternarLoginRegistro(false); dispararAviso("Solicitado!", "sucesso");
+    }
+
+    function abrirSetor(n) { 
+        window.setorAtivo = n; document.getElementById('labelSetor').innerText = n;
+        document.getElementById('novoCod').value = ""; document.getElementById('novoItem').value = ""; document.getElementById('novoPreco').value = ""; document.getElementById('novoQtd').value = "";
+        const isAux = cargoUsuario === "Auxiliar";
+        document.getElementById('areaCadastro').classList.toggle('hidden', isAux); document.getElementById('btnZerar').classList.toggle('hidden', isAux);
+        document.getElementById('menuSection').classList.add('hidden'); document.getElementById('planilhaSection').classList.remove('hidden'); render();
+    }
+
+    function setOp(op) { operacaoAtual = op; document.querySelectorAll('.btn-op').forEach(b => b.classList.remove('active')); document.getElementById('op-'+op).classList.add('active'); }
+    
+    function calc(i) {
+        const n = prompt("Valor:"); if(n !== null && n !== "") {
+            let v = parseFloat(n.replace(/[^0-9.]/g, '')) || 0; let it = memoria[window.setorAtivo][i];
+            let q = parseFloat(it.qtd) || 0;
+            if(operacaoAtual === 'set') q = v; else if(operacaoAtual === 'add') q += v; else if(operacaoAtual === 'sub') q -= v;
+            else if(operacaoAtual === 'mul') q *= v; else if(operacaoAtual === 'div') q = v !== 0 ? q/v : q;
+            it.qtd = Math.round(q); render();
         }
     }
 
-    function abrirSetor(nome) {
-        setorAtual = nome;
-        document.getElementById('nomeSetorAtivo').innerText = "SETOR: " + nome;
-        document.getElementById('menuSection').classList.add('hidden');
-        document.getElementById('planilhaSection').classList.remove('hidden');
-        renderizar();
+    function adicionarItemNovo() {
+        const c = document.getElementById('novoCod').value; const it = document.getElementById('novoItem').value; const p = document.getElementById('novoPreco').value || "R$ 0,00"; const q = document.getElementById('novoQtd').value || "0";
+        if(!c || !it) return; memoria[window.setorAtivo].push({ cod: c, item: it, qtd: q, preco: p }); render();
+        document.getElementById('novoCod').value = ""; document.getElementById('novoItem').value = ""; document.getElementById('novoPreco').value = ""; document.getElementById('novoQtd').value = "";
     }
 
-    function voltar() {
-        document.getElementById('planilhaSection').classList.add('hidden');
-        document.getElementById('menuSection').classList.remove('hidden');
-    }
-
-    function adicionar() {
-        const c = document.getElementById('cod').value;
-        const i = document.getElementById('item').value;
-        const q = document.getElementById('qtd').value;
-        const p = document.getElementById('preco').value;
-
-        if (!c || !i) return alert("Preencha Cód e Item!");
-
-        bancoDados[setorAtual].push({ cod: c, item: i, qtd: q, preco: p });
-        renderizar();
-        limparCampos();
-    }
-
-    function remover(index) {
-        bancoDados[setorAtual].splice(index, 1);
-        renderizar();
-    }
-
-    function renderizar() {
-        const corpo = document.getElementById('corpoTabela');
-        corpo.innerHTML = "";
-        bancoDados[setorAtual].forEach((obj, idx) => {
-            corpo.innerHTML += `<tr>
-                <td>${obj.cod}</td>
-                <td>${obj.item}</td>
-                <td>${obj.qtd}</td>
-                <td>${obj.preco}</td>
-                <td><button onclick="remover(${idx})" style="background:red; padding:5px; width:auto;">X</button></td>
-            </tr>`;
+    function render() {
+        const c = document.getElementById('tabelasSetores'); c.innerHTML = `<div style="background:#eee; padding:5px; font-weight:bold; text-align:center;">${window.setorAtivo}</div>`;
+        const t = document.createElement('table'); t.innerHTML = `<thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th><th>X</th></tr></thead><tbody id="corpoAtivo"></tbody>`;
+        c.appendChild(t); const cb = document.getElementById('corpoAtivo');
+        memoria[window.setorAtivo].forEach((o, i) => {
+            const eqtd = cargoUsuario === "Auxiliar" ? `<td>${o.qtd}</td>` : `<td class="qtd-editavel" onclick="calc(${i})">${o.qtd}</td>`;
+            cb.innerHTML += `<tr><td>${o.cod}</td><td>${o.item}</td>${eqtd}<td>${o.preco}</td><td><button style="background:red; color:white; border:none; padding:2px 5px; border-radius:4px" onclick="memoria[window.setorAtivo].splice(${i},1); render();">❌</button></td></tr>`;
         });
     }
 
-    function limparCampos() {
-        document.getElementById('cod').value = "";
-        document.getElementById('item').value = "";
-        document.getElementById('qtd').value = "";
-        document.getElementById('preco').value = "";
+    function enviarWhatsAppGeral() {
+        let txt = "*Relatório - Gabriel*%0A%0A"; let d = false;
+        Object.keys(memoria).forEach(s => { const it = memoria[s].filter(x => x.qtd != 0); if(it.length > 0) { d = true; txt += `--- *${s.toUpperCase()}* ---%0A`; it.forEach(i => txt += `📦 ${i.item} | Qtd: ${i.qtd}%0A`); } });
+        if(d) window.open(`https://wa.me/?text=${txt}`, '_blank');
     }
 
-    // FUNÇÃO PARA O FIREBASE
-    function salvarNoFirebase() {
-        const dadosTexto = JSON.stringify(bancoDados);
-        localStorage.setItem(CHAVE, dadosTexto);
+    function tirarFoto() { 
+        const area = document.getElementById('areaCapture'); const backup = area.innerHTML;
+        area.innerHTML = ""; 
+        
+        // Lógica de Print Inteligente
+        let listaSetores = (window.setorAtivo === 'Inventário') ? ['Inventário'] : ['Triados', 'Não Triado', 'Pregação'];
+        
+        listaSetores.forEach(setor => {
+            const itens = memoria[setor].filter(x => x.qtd != 0);
+            if(itens.length > 0) {
+                area.innerHTML += `<div style='background:#ddd; padding:5px; font-weight:bold; margin-top:10px; text-align:center;'>${setor}</div>`;
+                let tab = "<table><thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th></tr></thead><tbody>";
+                itens.forEach(i => tab += `<tr><td>${i.cod}</td><td>${i.item}</td><td>${i.qtd}</td><td>${i.preco}</td></tr>`);
+                area.innerHTML += tab + "</tbody></table>";
+            }
+        });
 
-        if (window.AppInventor) {
-            // "Grita" para o Kodular ouvir
-            window.AppInventor.setWebViewString("SALVAR:" + dadosTexto);
-            alert("🚀 Enviando tudo para o Firebase...");
-        } else {
-            alert("✅ Salvo localmente!");
-        }
+        setTimeout(() => {
+            html2canvas(area).then(canvas => { 
+                document.getElementById('resultImage').src = canvas.toDataURL(); 
+                document.getElementById('photoOverlay').classList.remove('hidden'); 
+                area.innerHTML = backup;
+            });
+        }, 300);
     }
+
+    function alternarLoginRegistro(r) { document.getElementById('loginSection').classList.toggle('hidden', r); document.getElementById('registroSection').classList.toggle('hidden', !r); }
+    function abrirMembros() { document.getElementById('menuSection').classList.add('hidden'); document.getElementById('membrosSection').classList.remove('hidden'); renderMembros(); }
+    
+    function renderMembros() {
+        const c = document.getElementById('corpoMembros'); c.innerHTML = "";
+        membros.forEach((m, i) => {
+            const ac = m.aprovado ? `<button style="background:red; color:white; border:none; padding:4px; border-radius:4px" onclick="membros.splice(${i},1); saveM(); renderMembros();">❌</button>` : `<button style="background:green; color:white; border:none; padding:4px; border-radius:4px" onclick="membros[${i}].aprovado=true; saveM(); renderMembros();">✅</button>`;
+            c.innerHTML += `<tr><td>${m.user}</td><td>${m.pass}</td><td>
+                <select onchange="membros[${i}].cargo=this.value; saveM();">
+                    <option value="Supervisor" ${m.cargo==='Supervisor'?'selected':''}>Supervisor</option>
+                    <option value="Colaborador" ${m.cargo==='Colaborador'?'selected':''}>Colaborador</option>
+                    <option value="Auxiliar" ${m.cargo==='Auxiliar'?'selected':''}>Auxiliar</option>
+                </select>
+            </td><td>${ac}</td></tr>`;
+        });
+    }
+
+    function salvarAgoraManual() { saveD(); saveM(); alert("Salvo!"); }
+    function fecharFoto() { document.getElementById('photoOverlay').classList.add('hidden'); }
+    function logout() { document.getElementById('menuSection').classList.add('hidden'); document.getElementById('loginSection').classList.remove('hidden'); }
+    function voltar() { document.getElementById('planilhaSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
+    function voltarAoMenu() { document.getElementById('membrosSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
+    function zerarQuantidades() { if(confirm("Zerar tudo?")) { memoria[window.setorAtivo].forEach(i => i.qtd = 0); render(); } }
 </script>
 </body>
 </html>
