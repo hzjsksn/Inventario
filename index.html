@@ -4,125 +4,160 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Painel Koda Store - v3.0</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --primary: #007bff; --success: #28a745; --purple: #6f42c1; --danger: #dc3545; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
-        .container { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 550px; box-sizing: border-box; }
-        input { width: 100%; height: 45px; margin: 5px 0; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
-        button { border: none; border-radius: 8px; padding: 14px; width: 100%; margin-top: 10px; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 14px; }
-        .btn-purple { background: var(--purple); } 
-        .btn-green { background: var(--success); } 
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
+        .container { background: var(--card); padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 600px; box-sizing: border-box; }
+        .hidden { display: none !important; }
+        input { width: 100%; height: 45px; margin: 5px 0; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { border: none; border-radius: 8px; padding: 12px; width: 100%; margin-top: 8px; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .btn-blue { background: var(--primary); }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
-        th, td { border: 1px solid #dee2e6; padding: 10px; text-align: left; font-size: 13px; }
+        .btn-purple { background: var(--purple); }
+        .btn-green { background: var(--success); }
+        .btn-red { background: var(--danger); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background: #f8f9fa; }
-        .hidden { display: none; }
+        .setor-badge { background: #6f42c1; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px; margin-bottom: 10px; display: inline-block; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="text-align: center; color: var(--purple);">Koda Store</h2>
-    
-    <div id="areaCadastro">
-        <input type="text" id="novoCod" placeholder="Código (ex: 09)">
-        <input type="text" id="novoItem" placeholder="Nome do Produto">
-        <input type="text" id="novoPreco" placeholder="R$ 0,00">
-        <input type="number" id="novoQtd" placeholder="Quantidade">
-        <button class="btn-purple" onclick="adicionarItem()">CADASTRAR</button>
+    <div id="loginSection">
+        <h2 style="text-align:center">Koda Store</h2>
+        <input type="text" id="usuario" placeholder="Usuário">
+        <input type="password" id="senha" placeholder="Senha">
+        <button class="btn-blue" onclick="acessar()">Entrar</button>
     </div>
 
-    <table id="tabelaDados">
-        <thead>
-            <tr>
-                <th>Cód</th>
-                <th>Item</th>
-                <th>Qtd</th>
-                <th>Preço</th>
-                <th>X</th>
-            </tr>
-        </thead>
-        <tbody id="corpoTabela"></tbody>
-    </table>
+    <div id="menuSection" class="hidden">
+        <h3 style="text-align:center">Painel de Controle</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button class="btn-purple" onclick="abrirSetor('Inventário')">Inventário</button>
+            <button class="btn-purple" onclick="abrirSetor('Triados')">Triados</button>
+            <button class="btn-purple" onclick="abrirSetor('Pregação')">Pregação</button>
+            <button class="btn-purple" onclick="abrirSetor('Não Triado')">Não Triado</button>
+        </div>
+        <button class="btn-red" style="margin-top:20px" onclick="location.reload()">Sair</button>
+    </div>
 
-    <button class="btn-green" onclick="salvarAgoraManual()">💾 SALVAR NO FIREBASE</button>
+    <div id="planilhaSection" class="hidden">
+        <div class="setor-badge" id="nomeSetorAtivo"></div>
+        <div id="formulario">
+            <input type="text" id="cod" placeholder="Cód">
+            <input type="text" id="item" placeholder="Nome do Produto">
+            <input type="number" id="qtd" placeholder="Qtd">
+            <input type="text" id="preco" placeholder="R$ 0,00">
+            <button class="btn-blue" onclick="adicionar()">Cadastrar Item</button>
+        </div>
+
+        <table>
+            <thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th><th>X</th></tr></thead>
+            <tbody id="corpoTabela"></tbody>
+        </table>
+
+        <button class="btn-green" style="margin-top:20px" onclick="salvarNoFirebase()">💾 SALVAR NO FIREBASE</button>
+        <button class="btn-red" onclick="voltar()">Voltar ao Menu</button>
+    </div>
 </div>
 
 <script>
-    // Usando a chave que aparece nos seus prints
-    const CHAVE_STORAGE = 'GABRIEL_DATA_V53';
-    let memoria = [];
+    const CHAVE = 'GABRIEL_DATA_V53';
+    const USER_MASTER = "37096901";
+    const PASS_MASTER = "9996057";
 
-    // Carregar dados locais ao abrir
-    window.onload = function() {
-        const salvos = localStorage.getItem(CHAVE_STORAGE);
-        if (salvos) {
-            memoria = JSON.parse(salvos);
-            renderizar();
-        }
+    // Estrutura completa com todos os setores
+    let bancoDados = {
+        'Inventário': [],
+        'Triados': [],
+        'Pregação': [],
+        'Não Triado': []
     };
 
-    function adicionarItem() {
-        const cod = document.getElementById('novoCod').value;
-        const item = document.getElementById('novoItem').value;
-        const qtd = document.getElementById('novoQtd').value;
-        const preco = document.getElementById('novoPreco').value;
+    let setorAtual = "";
 
-        if (!cod || !item) {
-            alert("Preencha Cód e Item!");
-            return;
+    window.onload = function() {
+        const salvos = localStorage.getItem(CHAVE);
+        if (salvos) bancoDados = JSON.parse(salvos);
+    };
+
+    function acessar() {
+        const u = document.getElementById('usuario').value;
+        const s = document.getElementById('senha').value;
+        if (u === USER_MASTER && s === PASS_MASTER) {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('menuSection').classList.remove('hidden');
+        } else {
+            alert("Acesso negado!");
         }
-
-        memoria.push({ cod, item, qtd, preco });
-        renderizar();
-        
-        // Limpar campos
-        document.getElementById('novoCod').value = "";
-        document.getElementById('novoItem').value = "";
-        document.getElementById('novoQtd').value = "";
-        document.getElementById('novoPreco').value = "";
     }
 
-    function removerItem(index) {
-        memoria.splice(index, 1);
+    function abrirSetor(nome) {
+        setorAtual = nome;
+        document.getElementById('nomeSetorAtivo').innerText = "SETOR: " + nome;
+        document.getElementById('menuSection').classList.add('hidden');
+        document.getElementById('planilhaSection').classList.remove('hidden');
+        renderizar();
+    }
+
+    function voltar() {
+        document.getElementById('planilhaSection').classList.add('hidden');
+        document.getElementById('menuSection').classList.remove('hidden');
+    }
+
+    function adicionar() {
+        const c = document.getElementById('cod').value;
+        const i = document.getElementById('item').value;
+        const q = document.getElementById('qtd').value;
+        const p = document.getElementById('preco').value;
+
+        if (!c || !i) return alert("Preencha Cód e Item!");
+
+        bancoDados[setorAtual].push({ cod: c, item: i, qtd: q, preco: p });
+        renderizar();
+        limparCampos();
+    }
+
+    function remover(index) {
+        bancoDados[setorAtual].splice(index, 1);
         renderizar();
     }
 
     function renderizar() {
         const corpo = document.getElementById('corpoTabela');
         corpo.innerHTML = "";
-        
-        memoria.forEach((obj, index) => {
-            corpo.innerHTML += `
-                <tr>
-                    <td>${obj.cod}</td>
-                    <td>${obj.item}</td>
-                    <td>${obj.qtd}</td>
-                    <td>${obj.preco}</td>
-                    <td><button onclick="removerItem(${index})" style="background:red; padding:5px; margin:0; width:auto;">X</button></td>
-                </tr>
-            `;
+        bancoDados[setorAtual].forEach((obj, idx) => {
+            corpo.innerHTML += `<tr>
+                <td>${obj.cod}</td>
+                <td>${obj.item}</td>
+                <td>${obj.qtd}</td>
+                <td>${obj.preco}</td>
+                <td><button onclick="remover(${idx})" style="background:red; padding:5px; width:auto;">X</button></td>
+            </tr>`;
         });
     }
 
-    // FUNÇÃO QUE ENVIA PARA O KODULAR
-    function salvarAgoraManual() { 
-        const dadosJSON = JSON.stringify(memoria);
-        
-        // Salva no navegador (localStorage)
-        localStorage.setItem(CHAVE_STORAGE, dadosJSON);
+    function limparCampos() {
+        document.getElementById('cod').value = "";
+        document.getElementById('item').value = "";
+        document.getElementById('qtd').value = "";
+        document.getElementById('preco').value = "";
+    }
 
-        // Verifica se está dentro do Kodular
+    // FUNÇÃO PARA O FIREBASE
+    function salvarNoFirebase() {
+        const dadosTexto = JSON.stringify(bancoDados);
+        localStorage.setItem(CHAVE, dadosTexto);
+
         if (window.AppInventor) {
-            // Envia o sinal para o bloco WebViewStringChange
-            window.AppInventor.setWebViewString("SALVAR:" + dadosJSON);
-            alert("🚀 Enviando dados para o Firebase...");
+            // "Grita" para o Kodular ouvir
+            window.AppInventor.setWebViewString("SALVAR:" + dadosTexto);
+            alert("🚀 Enviando tudo para o Firebase...");
         } else {
-            alert("✅ Dados salvos no navegador!\n(No App, isso enviaria ao Firebase)");
+            alert("✅ Salvo localmente!");
         }
     }
 </script>
-
 </body>
 </html>
