@@ -3,192 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel Koda Store - v3.0</title>
+    <title>Painel Koda - v3.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --qtd-bg: #fff9e6; --primary: #007bff; --secondary: #6c757d; --success: #28a745; --warning: #ff9800; --danger: #dc3545; --purple: #6f42c1; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 98vh; box-sizing: border-box; }
-        .container { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); width: 100%; max-width: 650px; box-sizing: border-box; }
-        .hidden { display: none !important; }
-        .version-footer { font-size: 10px; color: #bbb; text-align: center; margin-top: 20px; width: 100%; }
-        .input-row { display: flex; width: 100%; margin: 8px 0; background: #fff; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; height: 50px; align-items: center; }
-        .input-row input { flex: 1; border: none; padding: 0 12px; font-size: 16px; outline: none; background: transparent; height: 100%; }
-        .eye-area { width: 55px; height: 100%; background: #f8f9fa; border-left: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-        .input-single { width: 100%; height: 50px; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
-        .op-container { display: flex; gap: 8px; justify-content: center; margin: 15px 0; background: #f1f3f5; padding: 10px; border-radius: 10px; width: 100%; }
-        .btn-op { flex: 1; padding: 12px 0; font-size: 18px; border: none; background: var(--secondary); color: white; border-radius: 6px; cursor: pointer; }
-        .btn-op.active { background: var(--success); }
-        button { border: none; border-radius: 8px; cursor: pointer; font-weight: bold; padding: 14px; width: 100%; margin-top: 10px; font-size: 14px; color: white; text-transform: uppercase; }
-        .btn-blue { background: var(--primary); } .btn-purple { background: var(--purple); } .btn-green { background: var(--success); } .btn-gray { background: var(--secondary); }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
-        th, td { border: 1px solid #dee2e6; padding: 8px 4px; text-align: left; font-size: 11px; }
-        .qtd-editavel { cursor: pointer; background: var(--qtd-bg); text-align: center; font-weight: bold; }
-        #msgErroLogin { padding: 10px; border-radius: 6px; font-size: 13px; font-weight: bold; text-align: center; margin-bottom: 10px; display: none; }
+        :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --primary: #007bff; --success: #28a745; --purple: #6f42c1; --danger: #dc3545; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .container { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        input { width: 100%; height: 45px; margin: 5px 0; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { border: none; border-radius: 8px; padding: 12px; width: 100%; margin-top: 10px; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .btn-purple { background: var(--purple); } .btn-green { background: var(--success); } .btn-blue { background: var(--primary); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .hidden { display: none; }
     </style>
 </head>
-<body onload="carregarTudo()">
-
-<div id="photoOverlay" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:5000; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-    <img id="resultImage" style="max-width:90%; max-height:70%; background:white; margin-bottom:20px;">
-    <button class="btn-gray" onclick="fecharFoto()">FECHAR</button>
-</div>
+<body>
 
 <div class="container">
-    <div id="loginSection">
-        <h2 style="text-align: center;">Koda Store - Painel</h2>
-        <div id="msgErroLogin"></div>
-        <input type="text" id="usuario" class="input-single" placeholder="Usuário">
-        <div class="input-row">
-            <input type="password" id="senha" placeholder="Senha">
-            <div class="eye-area" onclick="alternarVisibilidade('senha')">👁️</div>
-        </div>
-        <button class="btn-blue" onclick="acessar()">Entrar</button>
+    <h2 style="text-align:center">Koda Store</h2>
+    
+    <div id="areaCadastro">
+        <input type="text" id="novoCod" placeholder="Código">
+        <input type="text" id="novoItem" placeholder="Nome do Produto">
+        <input type="text" id="novoPreco" placeholder="R$ 0,00">
+        <input type="number" id="novoQtd" placeholder="Quantidade">
+        <button class="btn-purple" onclick="adicionar()">CADASTRAR</button>
     </div>
 
-    <div id="menuSection" class="hidden">
-        <h2 style="text-align: center;">Menu</h2>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <button class="btn-blue" onclick="abrirSetor('Inventário')">Inventário</button>
-            <button class="btn-blue" onclick="abrirSetor('Triados')">Triados</button>
-            <button class="btn-blue" onclick="abrirSetor('Pregação')">Pregação</button>
-            <button class="btn-blue" onclick="abrirSetor('Não Triado')">Não Triado</button>
-        </div>
-        <button class="btn-gray" onclick="logout()">Sair</button>
-    </div>
+    <table id="tabela">
+        <thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th></tr></thead>
+        <tbody id="corpo"></tbody>
+    </table>
 
-    <div id="planilhaSection" class="hidden">
-        <div id="areaCadastro">
-            <h4 style="margin:0 0 10px 0; text-align:center; color:var(--purple)">SETOR: <span id="labelSetor"></span></h4>
-            <input type="text" id="novoCod" class="input-single" placeholder="Código">
-            <input type="text" id="novoItem" class="input-single" placeholder="Nome do Produto">
-            <input type="tel" id="novoPreco" class="input-single" placeholder="R$ 0,00" oninput="maskMoeda(this)">
-            <input type="text" id="novoQtd" class="input-single" placeholder="Quantidade">
-            <button class="btn-purple" onclick="adicionarItemNovo()">Cadastrar</button>
-        </div>
-        
-        <div class="op-container">
-            <button id="op-set" class="btn-op active" onclick="setOp('set')">✎</button>
-            <button id="op-add" class="btn-op" onclick="setOp('add')">+</button>
-            <button id="op-sub" class="btn-op" onclick="setOp('sub')">-</button>
-        </div>
-
-        <div id="areaCapture" style="background:white; padding:5px;"><div id="tabelasSetores"></div></div>
-        
-        <button class="btn-green" onclick="salvarNoFirebase()">💾 SALVAR NO FIREBASE</button>
-        <button class="btn-blue" style="background:#17a2b8" onclick="tirarFoto()">📸 PRINT</button>
-        <button class="btn-gray" onclick="voltar()">VOLTAR</button>
-    </div>
+    <button class="btn-green" onclick="salvarAgoraManual()">💾 SALVAR</button>
 </div>
 
 <script>
-    const CHAVE = "GABRIEL_DATA_V53";
-    const SUPER_USER = "37096901"; 
-    const SUPER_PASS = "9996057";
+    let memoria = [];
 
-    let memoria = { 'Inventário': [], 'Triados': [], 'Pregação': [], 'Não Triado': [] };
-    let operacaoAtual = 'set';
-
-    function maskMoeda(i) { 
-        let v = i.value.replace(/\D/g, ""); 
-        v = (v/100).toFixed(2).replace(".",","); 
-        i.value = "R$ " + v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1."); 
-    }
-
-    function alternarVisibilidade(id) { 
-        const i = document.getElementById(id); 
-        i.type = i.type === "password" ? "text" : "password"; 
-    }
-
-    function carregarTudo() { 
-        const d = localStorage.getItem(CHAVE); 
-        if(d) memoria = JSON.parse(d);
-    }
-
-    function acessar() {
-        const u = document.getElementById('usuario').value.trim(); 
-        const s = document.getElementById('senha').value.trim(); 
-        if(u === SUPER_USER && s === SUPER_PASS) {
-            document.getElementById('loginSection').classList.add('hidden'); 
-            document.getElementById('menuSection').classList.remove('hidden'); 
-        } else {
-            alert("Usuário ou Senha incorretos!");
-        }
-    }
-
-    function abrirSetor(n) { 
-        window.setorAtivo = n; 
-        document.getElementById('labelSetor').innerText = n;
-        document.getElementById('menuSection').classList.add('hidden'); 
-        document.getElementById('planilhaSection').classList.remove('hidden'); 
+    function adicionar() {
+        const c = document.getElementById('novoCod').value;
+        const it = document.getElementById('novoItem').value;
+        const q = document.getElementById('novoQtd').value;
+        const p = document.getElementById('novoPreco').value;
+        if(!c || !it) return;
+        memoria.push({ cod: c, item: it, qtd: q, preco: p });
         render();
-    }
-
-    function setOp(op) { 
-        operacaoAtual = op; 
-        document.querySelectorAll('.btn-op').forEach(b => b.classList.remove('active')); 
-        document.getElementById('op-'+op).classList.add('active'); 
-    }
-    
-    function calc(i) {
-        const n = prompt("Valor:"); if(n !== null && n !== "") {
-            let v = parseFloat(n) || 0; let it = memoria[window.setorAtivo][i];
-            let q = parseFloat(it.qtd) || 0;
-            if(operacaoAtual === 'set') q = v; 
-            else if(operacaoAtual === 'add') q += v; 
-            else if(operacaoAtual === 'sub') q -= v;
-            it.qtd = Math.round(q * 100) / 100; 
-            render();
-        }
-    }
-
-    function adicionarItemNovo() {
-        const c = document.getElementById('novoCod').value; 
-        const it = document.getElementById('novoItem').value; 
-        const p = document.getElementById('novoPreco').value || "R$ 0,00"; 
-        const q = document.getElementById('novoQtd').value || "0";
-        if(!c || !it) return; 
-        memoria[window.setorAtivo].push({ cod: c, item: it, qtd: q, preco: p }); 
-        render();
-        document.getElementById('novoCod').value = ""; document.getElementById('novoItem').value = ""; 
-        document.getElementById('novoPreco').value = ""; document.getElementById('novoQtd').value = "";
     }
 
     function render() {
-        const c = document.getElementById('tabelasSetores'); 
-        c.innerHTML = `<div style="background:#eee; padding:5px; font-weight:bold; text-align:center;">${window.setorAtivo}</div>`;
-        const t = document.createElement('table'); 
-        t.innerHTML = `<thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th><th>X</th></tr></thead><tbody id="corpoAtivo"></tbody>`;
-        c.appendChild(t); 
-        const cb = document.getElementById('corpoAtivo');
-        memoria[window.setorAtivo].forEach((o, i) => {
-            cb.innerHTML += `<tr><td>${o.cod}</td><td>${o.item}</td><td class="qtd-editavel" onclick="calc(${i})">${o.qtd}</td><td>${o.preco}</td><td><button style="background:red; color:white; border:none;" onclick="memoria[window.setorAtivo].splice(${i},1); render();">❌</button></td></tr>`;
+        const cb = document.getElementById('corpo');
+        cb.innerHTML = "";
+        memoria.forEach((o) => {
+            cb.innerHTML += `<tr><td>${o.cod}</td><td>${o.item}</td><td>${o.qtd}</td><td>${o.preco}</td></tr>`;
         });
     }
 
-    // --- FUNÇÃO DE SALVAMENTO PARA O FIREBASE (KODULAR) ---
-    function salvarNoFirebase() { 
-        const dadosTexto = JSON.stringify(memoria);
-        localStorage.setItem(CHAVE, dadosTexto); // Salva no celular
+    // ESTA É A FUNÇÃO QUE CONECTA COM O KODULAR
+    function salvarAgoraManual() { 
+        const dadosParaSalvar = JSON.stringify(memoria);
+        
+        // 1. Salva no navegador
+        localStorage.setItem('GABRIEL_DATA_V53', dadosParaSalvar);
 
+        // 2. Tenta enviar para o Kodular
         if (window.AppInventor) {
-            // ENVIA COM PREFIXO PARA O BLOCO WEBVIEWSTRINGCHANGE
-            window.AppInventor.setWebViewString("SALVAR:" + dadosTexto);
+            window.AppInventor.setWebViewString("SALVAR:" + dadosParaSalvar);
             alert("🚀 Enviando para o Firebase...");
         } else {
-            alert("✅ Salvo Localmente (Navegador)");
+            alert("⚠️ Aberto no navegador. Use o App para salvar no Firebase.");
         }
     }
-
-    function tirarFoto() { 
-        html2canvas(document.getElementById('areaCapture')).then(canvas => { 
-            document.getElementById('resultImage').src = canvas.toDataURL(); 
-            document.getElementById('photoOverlay').classList.remove('hidden'); 
-        }); 
-    }
-
-    function fecharFoto() { document.getElementById('photoOverlay').classList.add('hidden'); }
-    function logout() { document.getElementById('menuSection').classList.add('hidden'); document.getElementById('loginSection').classList.remove('hidden'); }
-    function voltar() { document.getElementById('planilhaSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
 </script>
 </body>
 </html>
