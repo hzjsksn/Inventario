@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v3.8</title>
+    <title>Painel - v4.9</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -14,82 +14,84 @@
         .hidden { display: none !important; }
         .version-footer { font-size: 10px; color: #bbb; text-align: center; margin-top: 20px; width: 100%; }
         
-        /* Inputs */
         .input-row { display: flex; width: 100%; margin: 8px 0; background: #fff; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; height: 50px; align-items: center; }
         .input-row input { flex: 1; border: none; padding: 0 12px; font-size: 16px; outline: none; background: transparent; height: 100%; }
         .eye-area { width: 55px; height: 100%; background: #f8f9fa; border-left: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
         .input-single { width: 100%; height: 50px; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
         
-        /* Botões */
         button { border: none; border-radius: 8px; cursor: pointer; font-weight: bold; padding: 14px; width: 100%; margin-top: 10px; font-size: 14px; color: white; text-transform: uppercase; }
         .btn-blue { background: var(--primary); } .btn-purple { background: var(--purple); } .btn-green { background: var(--success); } .btn-gray { background: var(--secondary); } .btn-orange { background: var(--warning); }
-        
-        /* Tabelas */
+        .btn-red { background: var(--danger); }
+
         table { width: 100%; border-collapse: collapse; margin-top: 5px; background: white; margin-bottom: 15px; }
         th, td { border: 1px solid #dee2e6; padding: 8px 4px; text-align: left; font-size: 11px; }
-        .qtd-editavel { cursor: pointer; background: var(--qtd-bg); text-align: center; font-weight: bold; color: var(--purple); font-size: 13px; }
+        .qtd-editavel { cursor: pointer; background: var(--qtd-bg); text-align: center; font-weight: bold; color: var(--purple); font-size: 14px; min-width: 45px; }
 
-        /* Modais */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 7000; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
-        .modal-content { background: white; padding: 20px; border-radius: 15px; width: 100%; max-width: 350px; text-align: center; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 7000; display: flex; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box; }
+        .modal-content { background: white; padding: 20px; border-radius: 15px; width: 100%; max-width: 320px; text-align: center; }
         
-        /* Toast */
-        #toast { visibility: hidden; min-width: 200px; background-color: #333; color: #fff; text-align: center; border-radius: 30px; padding: 12px 24px; position: fixed; z-index: 8000; left: 50%; bottom: 50px; transform: translateX(-50%); font-size: 15px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        #toast { visibility: hidden; min-width: 200px; background-color: #333; color: #fff; text-align: center; border-radius: 30px; padding: 12px 24px; position: fixed; z-index: 8000; left: 50%; bottom: 50px; transform: translateX(-50%); font-size: 14px; }
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
-        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 50px; opacity: 1;} }
-        @keyframes fadeout { from {bottom: 50px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+        
+        #printTempArea { background: white; padding: 20px; width: 450px; position: absolute; left: -9999px; }
+        .print-header { background: #000; color: white; padding: 8px; text-align: center; font-weight: bold; margin-top: 10px; font-size: 14px; }
+        select { padding: 5px; border-radius: 5px; border: 1px solid #ddd; width: 100%; }
     </style>
 </head>
 <body onload="carregarTudo()">
 
 <div id="toast">Aviso</div>
+<div id="printTempArea"></div>
+
+<div id="modalConfirm" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h3 style="margin:0; color:var(--danger);">Excluir Item?</h3>
+        <button class="btn-red" id="confirmBtnYes">EXCLUIR</button>
+        <button class="btn-gray" onclick="fecharModal('modalConfirm')">CANCELAR</button>
+    </div>
+</div>
 
 <div id="modalZerar" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3 style="margin-top:0;">Zerar Setor?</h3>
-        <p>Isso vai zerar todas as quantidades deste setor.</p>
-        <button class="btn-orange" onclick="confirmarZerar()">SIM, ZERAR</button>
-        <button class="btn-gray" onclick="fecharModal('modalZerar')">CANCELAR</button>
+        <h3>Zerar Setor?</h3>
+        <button class="btn-orange" onclick="confirmarZerar()">ZERAR</button>
+        <button class="btn-gray" onclick="fecharModal('modalZerar')">VOLTAR</button>
     </div>
 </div>
 
 <div id="modalCalc" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3 id="calcTitulo" style="margin-top:0; color:var(--purple);">Editar Qtd</h3>
-        <p id="calcSubtitulo" style="font-size:12px; color:#666; margin-bottom:5px;">Digite o valor abaixo:</p>
-        
-        <input type="tel" id="calcInput" class="input-single" style="text-align:center; font-size:24px; margin-bottom:10px;" placeholder="0">
-        
+        <h3 id="calcTitulo" style="color:var(--purple); margin:0;">Editar</h3>
+        <p id="calcSubtitulo" style="font-size:13px; font-weight:bold; margin: 10px 0;">Qtd atual: 0</p>
+        <input type="tel" id="calcInput" class="input-single" style="text-align:center; font-size:26px;" placeholder="0">
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 10px;">
-            <button class="btn-orange" style="font-size:20px; padding:10px 0;" onclick="operacaoCalc('+')">+</button>
-            <button class="btn-orange" style="font-size:20px; padding:10px 0;" onclick="operacaoCalc('-')">-</button>
-            <button class="btn-orange" style="font-size:20px; padding:10px 0;" onclick="operacaoCalc('*')">×</button>
-            <button class="btn-orange" style="font-size:20px; padding:10px 0;" onclick="operacaoCalc('/')">÷</button>
+            <button class="btn-orange" onclick="operacaoCalc('+')">+</button>
+            <button class="btn-orange" onclick="operacaoCalc('-')">-</button>
+            <button class="btn-orange" onclick="operacaoCalc('*')">×</button>
+            <button class="btn-orange" onclick="operacaoCalc('/')">÷</button>
         </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <button class="btn-blue" onclick="executarCalc()">EDITAR</button>
-            <button class="btn-gray" onclick="fecharModal('modalCalc')">VOLTAR</button>
-        </div>
+        <button class="btn-purple" onclick="executarCalc()">EDITAR VALOR</button>
+        <button class="btn-gray" onclick="fecharModal('modalCalc')">VOLTAR</button>
     </div>
 </div>
 
-<div id="photoOverlay" class="modal-overlay hidden" style="flex-direction:column; background:rgba(0,0,0,0.9);">
-    <img id="resultImage" style="max-width:95%; max-height:80%; background:white; margin-bottom:20px; border: 2px solid white;">
-    <button class="btn-gray" style="width:200px" onclick="fecharFoto()">FECHAR</button>
+<div id="photoOverlay" class="modal-overlay hidden" style="flex-direction:column;">
+    <div style="background:white; padding:5px; border-radius:8px;">
+        <img id="resultImage" style="max-width:90vw; max-height:75vh;">
+    </div>
+    <button class="btn-gray" style="width:200px; margin-top:15px;" onclick="fecharFoto()">FECHAR</button>
 </div>
 
 <div class="container">
     <div id="loginSection">
-        <h2 style="text-align: center;">Painel</h2>
-        <div id="msgErroLogin" style="padding:10px; border-radius:6px; font-size:13px; font-weight:bold; text-align:center; margin-bottom:10px; display:none;"></div>
-        <input type="text" id="usuario" class="input-single" placeholder="Usuário" autocomplete="off">
+        <h2 style="text-align: center;">Acesso v4.9</h2>
+        <input type="text" id="usuario" class="input-single" placeholder="Usuário">
         <div class="input-row">
             <input type="password" id="senha" placeholder="Senha">
             <div class="eye-area" onclick="alternarVisibilidade('senha')">👁️</div>
         </div>
         <div style="display:flex; align-items:center; gap:10px; margin:10px 0;">
-            <input type="checkbox" id="lembrar" style="width:18px; height:18px;"> <label style="font-size:14px;">Lembrar acesso</label>
+            <input type="checkbox" id="lembrar" style="width:18px; height:18px;"> <label style="font-size:14px;">Lembrar</label>
         </div>
         <button class="btn-blue" onclick="acessar()">Entrar</button>
         <span style="color:var(--primary); cursor:pointer; text-decoration:underline; font-size:13px; text-align:center; display:block; margin-top:15px;" onclick="alternarLoginRegistro(true)">Solicitar Registro</span>
@@ -102,54 +104,58 @@
             <input type="password" id="regSenha" placeholder="Senha">
             <div class="eye-area" onclick="alternarVisibilidade('regSenha')">👁️</div>
         </div>
-        <button class="btn-purple" onclick="registrarNovoUsuario()">Enviar</button>
-        <span style="color:var(--primary); cursor:pointer; text-decoration:underline; font-size:13px; text-align:center; display:block; margin-top:15px;" onclick="alternarLoginRegistro(false)">Voltar</span>
+        <button class="btn-purple" onclick="registrarNovoUsuario()">Enviar Solicitação</button>
+        <button class="btn-gray" onclick="alternarLoginRegistro(false)">Voltar</button>
     </div>
 
     <div id="menuSection" class="hidden">
-        <h2 style="text-align: center;">Menu</h2>
+        <h2 style="text-align: center;">Menu Principal</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <button class="btn-blue" onclick="abrirSetor('Inventário')">Inventário</button>
             <button class="btn-blue" onclick="abrirSetor('Triados')">Triados</button>
             <button class="btn-blue" onclick="abrirSetor('Pregação')">Pregação</button>
             <button class="btn-blue" onclick="abrirSetor('Não Triado')">Não Triado</button>
-            <button id="btnMembros" class="btn-purple hidden" style="grid-column: span 2;" onclick="abrirMembros()">Membros (ADM)</button>
+            <button id="btnMembros" class="btn-purple hidden" style="grid-column: span 2;" onclick="abrirMembros()">Gestão de Acessos</button>
         </div>
         <button class="btn-gray" onclick="logout()">Sair</button>
     </div>
 
     <div id="membrosSection" class="hidden">
-        <h2 style="text-align: center;">Gestão</h2>
-        <div style="overflow-x: auto;"><table id="tableMembros"><thead><tr><th>User</th><th>Senha</th><th>Cargo</th><th>Ação</th></tr></thead><tbody id="corpoMembros"></tbody></table></div>
-        <button class="btn-gray" onclick="voltarAoMenu()">VOLTAR</button>
+        <h2 style="text-align: center;">Gerenciar Logins</h2>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead><tr><th>Usuário</th><th>Senha</th><th>Cargo</th><th>Status/Ação</th></tr></thead>
+                <tbody id="corpoMembros"></tbody>
+            </table>
+        </div>
+        <button class="btn-gray" onclick="voltarAoMenu()">VOLTAR AO MENU</button>
     </div>
 
     <div id="planilhaSection" class="hidden">
         <div id="areaCadastro">
             <h4 style="margin:0 0 10px 0; text-align:center; color:var(--purple)">SETOR: <span id="labelSetor"></span></h4>
-            <input type="tel" inputmode="numeric" id="novoCod" class="input-single" placeholder="Código" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+            <input type="tel" id="novoCod" class="input-single" placeholder="Cód">
             <input type="text" id="novoItem" class="input-single" placeholder="Produto">
-            <input type="tel" inputmode="numeric" id="novoPreco" class="input-single" placeholder="R$ 0,00" oninput="maskMoeda(this)">
-            <input type="tel" inputmode="numeric" id="novoQtd" class="input-single" placeholder="Quantidade" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+            <input type="tel" id="novoPreco" class="input-single" placeholder="R$ 0,00" oninput="maskMoeda(this)">
+            <input type="tel" id="novoQtd" class="input-single" placeholder="Qtd">
             <button class="btn-purple" onclick="adicionarItemNovo()">Cadastrar</button>
         </div>
         
-        <div id="areaCapture" style="background:white; padding:5px;"><div id="tabelasSetores"></div></div>
+        <div id="areaCaptureIndividual">
+            <div id="tabelasSetores"></div>
+        </div>
         
-        <button class="btn-green" onclick="salvarAgoraManual()">💾 SALVAR</button>
-        <button class="btn-blue" style="background:#17a2b8" onclick="tirarFoto()">📸 PRINT</button>
-        <button class="btn-green" style="background:#25d366;" onclick="enviarWhatsAppGeral()">📲 WHATSAPP</button>
-        <button id="btnZerar" class="btn-orange" onclick="abrirModal('modalZerar')">🔄 ZERAR</button>
-        <button class="btn-gray" onclick="voltar()">VOLTAR</button>
+        <button id="btnSalvar" class="btn-green" onclick="salvarAgoraManual()">💾 SALVAR NO BANCO</button>
+        <button id="btnPrintMain" class="btn-blue" style="background:#17a2b8" onclick="gerarRelatorio()">📸 GERAR PRINT</button>
+        <button class="btn-green" style="background:#25d366;" onclick="enviarWhatsAppCustom()">📲 ENVIAR WHATSAPP</button>
+        <button id="btnZerar" class="btn-orange hidden" onclick="abrirModal('modalZerar')">🔄 ZERAR SETOR</button>
+        <button class="btn-gray" onclick="voltar()">VOLTAR AO MENU</button>
     </div>
 </div>
 
-<div class="version-footer">versão 3.8</div>
+<div class="version-footer">v4.9 - Hierarquia Supervisor</div>
 
 <script>
-    // ==========================================
-    // CONFIGURAÇÃO DO FIREBASE (ATUALIZADA)
-    // ==========================================
     const firebaseConfig = {
       apiKey: "AIzaSyA-E1mcTPCFoWQlj8wARDWvE-nJ3JeXJXM",
       authDomain: "plhanilha-2e0c3.firebaseapp.com",
@@ -161,17 +167,14 @@
       measurementId: "G-RGZ409J25V"
     };
     
-    // Inicializar Firebase
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    // ==========================================
-
-    const CHAVE = "APP_GAB_V35";
-    const SUPER_USER = "37096901"; const SUPER_PASS = "9996057";
+    const CHAVE = "APP_GAB_V49";
+    const SUPREMO_U = "37096901"; const SUPREMO_P = "9996057";
+    
     let memoria = { 'Inventário': [], 'Triados': [], 'Pregação': [], 'Não Triado': [] };
-    let membros = []; let cargoUsuario = ""; 
+    let membros = []; 
+    let cargoUsuario = ""; 
     let itemEditandoIndex = null;
 
     function maskMoeda(i) { let v = i.value.replace(/\D/g, ""); v = (v/100).toFixed(2).replace(".",","); i.value = "R$ " + v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1."); }
@@ -180,195 +183,214 @@
     function fecharModal(id) { document.getElementById(id).classList.add('hidden'); }
 
     function carregarTudo() { 
-        const l = localStorage.getItem(CHAVE + '_LOG'); if(l) { const o=JSON.parse(l); document.getElementById('usuario').value=o.u; document.getElementById('senha').value=o.s; document.getElementById('lembrar').checked=true; }
-
-        db.ref('memoria').on('value', (snapshot) => {
-            if(snapshot.exists()) {
-                const data = snapshot.val();
-                memoria['Inventário'] = data['Inventário'] || [];
-                memoria['Triados'] = data['Triados'] || [];
-                memoria['Pregação'] = data['Pregação'] || [];
-                memoria['Não Triado'] = data['Não Triado'] || [];
-                if(!document.getElementById('planilhaSection').classList.contains('hidden')) render();
-            }
-        });
-
-        db.ref('membros').on('value', (snapshot) => {
-            if(snapshot.exists()) {
-                membros = snapshot.val() || [];
-                if(!document.getElementById('membrosSection').classList.contains('hidden')) renderMembros();
-            }
-        });
+        const l = localStorage.getItem(CHAVE + '_LOG'); 
+        if(l) { const o=JSON.parse(l); document.getElementById('usuario').value=o.u; document.getElementById('senha').value=o.s; document.getElementById('lembrar').checked=true; }
+        
+        db.ref('memoria').on('value', (s) => { if(s.exists()){ memoria = s.val(); if(!document.getElementById('planilhaSection').classList.contains('hidden')) render(); } });
+        db.ref('membros').on('value', (s) => { membros = s.val() || []; if(!document.getElementById('membrosSection').classList.contains('hidden')) renderMembros(); });
     }
 
-    function saveM() { db.ref('membros').set(membros); }
-    function saveD() { db.ref('memoria').set(memoria); }
+    function saveD() { db.ref('memoria').set(memoria).then(() => render()); }
+    function mostrarToast(m) { const t = document.getElementById("toast"); t.innerText = m; t.className = "show"; setTimeout(() => t.className = "", 3000); }
 
-    function mostrarToast(mensagem) {
-        const t = document.getElementById("toast");
-        t.innerText = mensagem; t.className = "show";
-        setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
-    }
-
-    function dispararAviso(t, tipo) { 
-        const d = document.getElementById('msgErroLogin'); d.innerText = t; d.style.display = "block"; 
-        d.style.background = tipo === "erro" ? "#ffebee" : "#e8f5e9"; d.style.color = tipo === "erro" ? "#c62828" : "#2e7d32"; 
-    }
-    
     function acessar() {
-        const u = document.getElementById('usuario').value.trim(); const s = document.getElementById('senha').value.trim(); const lemb = document.getElementById('lembrar').checked;
-        if(u === SUPER_USER && s === SUPER_PASS) { cargoUsuario = "Supervisor"; document.getElementById('btnMembros').classList.remove('hidden'); return finalizarLogin(u,s,lemb); }
-        let m = membros.find(x => x.user === u);
-        if(!m) return dispararAviso("Não cadastrado!", "erro");
-        if(m.pass !== s) return dispararAviso("Senha errada!", "erro");
-        if(!m.aprovado) return dispararAviso("Pendente!", "erro");
-        cargoUsuario = m.cargo; finalizarLogin(u,s,lemb);
+        const u = document.getElementById('usuario').value.trim(), s = document.getElementById('senha').value.trim();
+        if(u === SUPREMO_U && s === SUPREMO_P) { 
+            cargoUsuario = "Supervisor"; 
+            document.getElementById('btnMembros').classList.remove('hidden'); 
+            return finalizarLogin(u,s); 
+        }
+        let m = membros.find(x => x.user === u && x.pass === s);
+        if(!m) return mostrarToast("Usuário não encontrado!");
+        if(!m.aprovado) return mostrarToast("Aguarde aprovação!");
+        
+        cargoUsuario = m.cargo;
+        if(cargoUsuario === "Supervisor") document.getElementById('btnMembros').classList.remove('hidden');
+        finalizarLogin(u,s);
     }
 
-    function finalizarLogin(u,s,l) { if(l) localStorage.setItem(CHAVE + '_LOG', JSON.stringify({u,s})); else localStorage.removeItem(CHAVE + '_LOG'); document.getElementById('loginSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
-    
-    function registrarNovoUsuario() {
-        const u = document.getElementById('regUsuario').value.trim(); const s = document.getElementById('regSenha').value.trim(); if(!u || !s) return;
-        membros.push({ user: u, pass: s, data: new Date().toLocaleDateString(), cargo: "Colaborador", aprovado: false });
-        saveM(); alternarLoginRegistro(false); dispararAviso("Solicitado!", "sucesso");
+    function finalizarLogin(u,s) { 
+        if(document.getElementById('lembrar').checked) localStorage.setItem(CHAVE + '_LOG', JSON.stringify({u,s})); 
+        document.getElementById('loginSection').classList.add('hidden'); 
+        document.getElementById('menuSection').classList.remove('hidden'); 
     }
 
     function abrirSetor(n) { 
         window.setorAtivo = n; document.getElementById('labelSetor').innerText = n;
-        const isAux = cargoUsuario === "Auxiliar";
-        document.getElementById('areaCadastro').classList.toggle('hidden', isAux); document.getElementById('btnZerar').classList.toggle('hidden', isAux);
+        const ehSupervisor = (cargoUsuario === "Supervisor");
+        const ehAuxiliar = (cargoUsuario === "Auxiliar");
+
+        document.getElementById('areaCadastro').classList.toggle('hidden', ehAuxiliar);
+        document.getElementById('btnSalvar').classList.toggle('hidden', ehAuxiliar);
+        document.getElementById('btnZerar').classList.toggle('hidden', !ehSupervisor);
+        
+        const btnPrint = document.getElementById('btnPrintMain');
+        btnPrint.innerText = (n === 'Inventário') ? "📸 PRINT INVENTÁRIO" : "📸 PRINT RELATÓRIO";
+        btnPrint.style.background = (n === 'Inventário') ? "#17a2b8" : "#6f42c1";
+
         document.getElementById('menuSection').classList.add('hidden'); document.getElementById('planilhaSection').classList.remove('hidden'); render();
     }
 
-    function prepararCalc(i) {
-        itemEditandoIndex = i;
-        const item = memoria[window.setorAtivo][i];
-        document.getElementById('calcTitulo').innerText = item.item;
-        document.getElementById('calcSubtitulo').innerText = "Qtd atual: " + item.qtd + " | Digite o valor:";
-        document.getElementById('calcInput').value = "";
-        abrirModal('modalCalc');
-        setTimeout(() => document.getElementById('calcInput').focus(), 200);
+    function render() {
+        const container = document.getElementById('tabelasSetores');
+        container.innerHTML = `<div style="background:#444; color:white; padding:8px; font-weight:bold; text-align:center; border-radius:5px; margin-top:10px;">${window.setorAtivo.toUpperCase()}</div>`;
+        let html = `<table><thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th>`;
+        if(cargoUsuario !== "Auxiliar") html += `<th>X</th>`;
+        html += `</tr></thead><tbody>`;
+        (memoria[window.setorAtivo] || []).forEach((o, i) => {
+            html += `<tr><td>${o.cod}</td><td>${o.item}</td>`;
+            if(cargoUsuario !== "Auxiliar") html += `<td class="qtd-editavel" onclick="prepararCalc(${i})">${o.qtd}</td>`;
+            else html += `<td>${o.qtd}</td>`;
+            html += `<td>${o.preco}</td>`;
+            if(cargoUsuario !== "Auxiliar") html += `<td style="text-align:center"><button style="background:red; padding:4px 8px; width:auto; margin:0;" onclick="confirmarRemover(${i})">❌</button></td>`;
+            html += `</tr>`;
+        });
+        container.innerHTML += html + `</tbody></table>`;
+    }
+
+    function confirmarRemover(i) {
+        if(cargoUsuario === "Auxiliar") return;
+        abrirModal('modalConfirm');
+        document.getElementById('confirmBtnYes').onclick = function() {
+            memoria[window.setorAtivo].splice(i, 1); saveD(); fecharModal('modalConfirm');
+        };
+    }
+
+    function prepararCalc(i) { 
+        if(cargoUsuario === "Auxiliar") return;
+        itemEditandoIndex = i; const item = memoria[window.setorAtivo][i]; 
+        document.getElementById('calcTitulo').innerText = item.item; 
+        document.getElementById('calcSubtitulo').innerText = "Qtd atual: " + item.qtd;
+        document.getElementById('calcInput').value = ""; abrirModal('modalCalc'); 
     }
 
     function operacaoCalc(op) {
-        const inputVal = parseInt(document.getElementById('calcInput').value);
-        if(isNaN(inputVal)) return;
-        let qtdAtual = parseInt(memoria[window.setorAtivo][itemEditandoIndex].qtd) || 0;
-        if(op === '+') qtdAtual += inputVal;
-        if(op === '-') qtdAtual -= inputVal;
-        if(op === '*') qtdAtual *= inputVal;
-        if(op === '/') qtdAtual = Math.round(qtdAtual / inputVal);
-        memoria[window.setorAtivo][itemEditandoIndex].qtd = qtdAtual;
-        saveD();
-        document.getElementById('calcSubtitulo').innerText = "Qtd atual: " + qtdAtual + " | Digite o valor:";
+        const valTxt = document.getElementById('calcInput').value.trim();
+        if(valTxt === "") return mostrarToast("Digite valor!");
+        let val = parseInt(valTxt) || 0, atual = parseInt(memoria[window.setorAtivo][itemEditandoIndex].qtd) || 0;
+        if(op==='+') atual += val; else if(op==='-') atual -= val; else if(op==='*') atual *= val; else if(op==='/') atual = val!==0?Math.round(atual/val):0;
+        memoria[window.setorAtivo][itemEditandoIndex].qtd = atual; saveD();
+        document.getElementById('calcSubtitulo').innerText = "Qtd atual: " + atual;
         document.getElementById('calcInput').value = "";
     }
 
     function executarCalc() {
-        const inputVal = document.getElementById('calcInput').value;
-        if(inputVal === "") return;
-        let novaQtd = parseInt(inputVal) || 0;
-        memoria[window.setorAtivo][itemEditandoIndex].qtd = novaQtd;
-        saveD();
-        document.getElementById('calcSubtitulo').innerText = "Qtd atual: " + novaQtd + " | Digite o valor:";
-        document.getElementById('calcInput').value = "";
+        const valTxt = document.getElementById('calcInput').value.trim();
+        if(valTxt === "") return mostrarToast("Digite valor!");
+        memoria[window.setorAtivo][itemEditandoIndex].qtd = parseInt(valTxt) || 0; 
+        saveD(); fecharModal('modalCalc');
     }
 
     function adicionarItemNovo() {
-        const c = document.getElementById('novoCod').value; const it = document.getElementById('novoItem').value; const p = document.getElementById('novoPreco').value || "R$ 0,00"; const q = document.getElementById('novoQtd').value || "0";
-        if(!c || !it) return; memoria[window.setorAtivo].push({ cod: c, item: it, qtd: q, preco: p }); saveD();
-        document.getElementById('novoCod').value = ""; document.getElementById('novoItem').value = ""; document.getElementById('novoPreco').value = ""; document.getElementById('novoQtd').value = "";
+        if(cargoUsuario === "Auxiliar") return;
+        const c = document.getElementById('novoCod').value, it = document.getElementById('novoItem').value, p = document.getElementById('novoPreco').value || "R$ 0,00", q = document.getElementById('novoQtd').value || "0";
+        if(!c || !it) return;
+        if(!memoria[window.setorAtivo]) memoria[window.setorAtivo] = [];
+        memoria[window.setorAtivo].push({ cod: c, item: it, qtd: q, preco: p });
+        saveD(); document.getElementById('novoCod').value = ""; document.getElementById('novoItem').value = ""; document.getElementById('novoPreco').value = ""; document.getElementById('novoQtd').value = "";
     }
 
-    function render() {
-        const c = document.getElementById('tabelasSetores'); c.innerHTML = `<div style="background:#eee; padding:5px; font-weight:bold; text-align:center;">${window.setorAtivo}</div>`;
-        const t = document.createElement('table'); t.innerHTML = `<thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th><th>X</th></tr></thead><tbody id="corpoAtivo"></tbody>`;
-        c.appendChild(t); const cb = document.getElementById('corpoAtivo');
-        memoria[window.setorAtivo].forEach((o, i) => {
-            const eqtd = `<td class="qtd-editavel" onclick="prepararCalc(${i})">${o.qtd}</td>`;
-            cb.innerHTML += `<tr><td>${o.cod}</td><td>${o.item}</td>${eqtd}<td>${o.preco}</td><td><button style="background:red; color:white; border:none; padding:2px 5px; border-radius:4px; margin:0; width:auto; text-transform:none;" onclick="memoria[window.setorAtivo].splice(${i},1); saveD();">❌</button></td></tr>`;
+    function gerarRelatorio() { if(window.setorAtivo === 'Inventário') tirarFotoIndividual(); else tirarFotoGrupo(); }
+
+    function tirarFotoIndividual() {
+        html2canvas(document.getElementById('areaCaptureIndividual'), { backgroundColor: "#ffffff", scale: 2 }).then(canvas => {
+            document.getElementById('resultImage').src = canvas.toDataURL(); abrirModal('photoOverlay');
         });
     }
 
-    function enviarWhatsAppGeral() {
+    function tirarFotoGrupo() { 
+        const tmp = document.getElementById('printTempArea');
+        tmp.innerHTML = `<h2 style="text-align:center;">ESTOQUE ATUAL</h2>`;
+        let tem = false;
+        ['Triados', 'Não Triado', 'Pregação'].forEach(s => {
+            const itens = (memoria[s] || []).filter(x => parseInt(x.qtd) > 0);
+            if(itens.length > 0) {
+                tem = true; tmp.innerHTML += `<div class="print-header">${s.toUpperCase()}</div>`;
+                let table = `<table><thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th></tr></thead><tbody>`;
+                itens.forEach(i => { table += `<tr><td>${i.cod}</td><td>${i.item}</td><td>${i.qtd}</td><td>${i.preco}</td></tr>`; });
+                tmp.innerHTML += table + `</tbody></table>`;
+            }
+        });
+        if(!tem) return mostrarToast("Vazio!");
+        setTimeout(() => {
+            html2canvas(tmp, { backgroundColor: "#ffffff", scale: 2 }).then(canvas => {
+                document.getElementById('resultImage').src = canvas.toDataURL(); abrirModal('photoOverlay'); tmp.innerHTML = "";
+            });
+        }, 400);
+    }
+
+    function enviarWhatsAppCustom() {
         let txt = "📊 *RELATÓRIO DE ITENS DISPONÍVEIS* 📊\n\n✅ *DADOS DO SISTEMA:*\n"; 
-        let d = false;
-        Object.keys(memoria).forEach(s => { 
-            const it = memoria[s].filter(x => x.qtd != 0); 
-            if(it.length > 0) { 
-                d = true; 
-                txt += `\n📍 *SETOR: ${s.toUpperCase()}*\n`; 
-                it.forEach(i => {
-                    txt += `------------------------------------\n`;
-                    txt += `🆔 *ID/CÓDIGO:* ${i.cod}\n`;
-                    txt += `📦 *ITEM:* ${i.item}\n`;
-                    txt += `🔢 *QUANTIDADE:* ${i.qtd}\n`;
-                    txt += `💰 *VALOR:* ${i.preco}\n`;
+        let tem = false;
+        const setores = (window.setorAtivo === 'Inventário') ? ['Inventário'] : ['Triados', 'Não Triado', 'Pregação'];
+        setores.forEach(s => {
+            const itens = (memoria[s] || []).filter(x => parseInt(x.qtd) > 0);
+            if(itens.length > 0) {
+                tem = true; txt += `\n📍 *SETOR: ${s.toUpperCase()}*\n------------------------------------\n`; 
+                itens.forEach(i => {
+                    txt += `🆔 *ID/CÓDIGO:* ${i.cod}\n📦 *ITEM:* ${i.item}\n🔢 *QUANTIDADE:* ${i.qtd}\n💰 *VALOR:* ${i.preco}\n------------------------------------\n`;
                 }); 
             } 
         });
-        if(d) {
-            txt += `------------------------------------\n\n_Gerado via sistema_ 📱`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank');
-        } else {
-            mostrarToast("Nenhum item para enviar!");
-        }
+        if(tem) { txt += `\n_Gerado via sistema_ 📱`; window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank'); }
+        else mostrarToast("Vazio!");
     }
 
-    function tirarFoto() { 
-        let temItens = false;
-        Object.keys(memoria).forEach(setor => { if (memoria[setor].some(i => parseFloat(i.qtd) > 0)) temItens = true; });
-        if (!temItens) { mostrarToast("Inventário vazio!"); return; }
-        const area = document.getElementById('areaCapture'); const backup = area.innerHTML;
-        area.innerHTML = ""; 
-        let listaSetores = (window.setorAtivo === 'Inventário') ? ['Inventário'] : ['Triados', 'Não Triado', 'Pregação'];
-        listaSetores.forEach(setor => {
-            const itens = memoria[setor].filter(x => x.qtd != 0);
-            if(itens.length > 0) {
-                area.innerHTML += `<div style='background:#ddd; padding:5px; font-weight:bold; margin-top:10px; text-align:center;'>${setor}</div>`;
-                let tab = "<table><thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th></tr></thead><tbody>";
-                itens.forEach(i => tab += `<tr><td>${i.cod}</td><td>${i.item}</td><td>${i.qtd}</td><td>${i.preco}</td></tr>`);
-                area.innerHTML += tab + "</tbody></table>";
-            }
+    function confirmarZerar() { if(cargoUsuario === "Supervisor") { memoria[window.setorAtivo].forEach(i => i.qtd = 0); saveD(); fecharModal('modalZerar'); } }
+    function logout() { location.reload(); }
+    function fecharFoto() { fecharModal('photoOverlay'); }
+    function voltar() { document.getElementById('planilhaSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
+    function salvarAgoraManual() { saveD(); mostrarToast("Salvo!"); }
+    
+    function registrarNovoUsuario() {
+        const u = document.getElementById('regUsuario').value.trim(), s = document.getElementById('regSenha').value.trim();
+        if(!u || !s) return;
+        membros.push({user:u, pass:s, cargo:"Auxiliar", aprovado:false});
+        db.ref('membros').set(membros).then(() => { alternarLoginRegistro(false); mostrarToast("Solicitado!"); });
+    }
+
+    function renderMembros() { 
+        const c = document.getElementById('corpoMembros'); c.innerHTML = "";
+        
+        // Define peso dos cargos para ordenar
+        const peso = { "Supervisor": 3, "Colaborador": 2, "Auxiliar": 1 };
+        
+        // Ordena: Primeiro aprovados vs pendentes, depois por peso do cargo
+        let listaOrdenada = [...membros].sort((a, b) => {
+            if(a.aprovado !== b.aprovado) return a.aprovado ? 1 : -1; // Pendentes no topo
+            return peso[b.cargo] - peso[a.cargo]; // Cargos maiores primeiro
         });
-        setTimeout(() => {
-            html2canvas(area).then(canvas => { 
-                document.getElementById('resultImage').src = canvas.toDataURL(); 
-                abrirModal('photoOverlay');
-                area.innerHTML = backup;
-            });
-        }, 300);
+
+        listaOrdenada.forEach((m, i) => {
+            const realIdx = membros.findIndex(x => x.user === m.user);
+            const statusBtn = m.aprovado ? 
+                `<button class="btn-red" style="padding:4px; width:auto; margin:0;" onclick="membros.splice(${realIdx},1); db.ref('membros').set(membros);">REMOVER</button>` : 
+                `<button class="btn-green" style="padding:4px; width:auto; margin:0;" onclick="membros[${realIdx}].aprovado=true; db.ref('membros').set(membros);">APROVAR</button>`;
+            
+            c.innerHTML += `<tr>
+                <td>${m.user}</td>
+                <td>${m.pass}</td>
+                <td>
+                    <select onchange="membros[${realIdx}].cargo=this.value; db.ref('membros').set(membros);">
+                        <option value="Supervisor" ${m.cargo==='Supervisor'?'selected':''}>Supervisor</option>
+                        <option value="Colaborador" ${m.cargo==='Colaborador'?'selected':''}>Colaborador</option>
+                        <option value="Auxiliar" ${m.cargo==='Auxiliar'?'selected':''}>Auxiliar</option>
+                    </select>
+                </td>
+                <td>${statusBtn}</td>
+            </tr>`;
+        });
     }
 
     function alternarLoginRegistro(r) { document.getElementById('loginSection').classList.toggle('hidden', r); document.getElementById('registroSection').classList.toggle('hidden', !r); }
-    function abrirMembros() { document.getElementById('menuSection').classList.add('hidden'); document.getElementById('membrosSection').classList.remove('hidden'); renderMembros(); }
-    
-    function renderMembros() {
-        const c = document.getElementById('corpoMembros'); c.innerHTML = "";
-        membros.forEach((m, i) => {
-            const ac = m.aprovado ? `<button style="background:red; width:auto; padding:5px; margin:0;" onclick="membros.splice(${i},1); saveM();">❌</button>` : `<button style="background:green; width:auto; padding:5px; margin:0;" onclick="membros[${i}].aprovado=true; saveM();">✅</button>`;
-            c.innerHTML += `<tr><td>${m.user}</td><td>${m.pass}</td><td>
-                <select onchange="membros[${i}].cargo=this.value; saveM();">
-                    <option value="Supervisor" ${m.cargo==='Supervisor'?'selected':''}>Supervisor</option>
-                    <option value="Colaborador" ${m.cargo==='Colaborador'?'selected':''}>Colaborador</option>
-                    <option value="Auxiliar" ${m.cargo==='Auxiliar'?'selected':''}>Auxiliar</option>
-                </select>
-            </td><td>${ac}</td></tr>`;
-        });
+    function abrirMembros() { 
+        if(cargoUsuario === "Supervisor") {
+            document.getElementById('menuSection').classList.add('hidden'); 
+            document.getElementById('membrosSection').classList.remove('hidden'); 
+            renderMembros(); 
+        }
     }
-
-    function salvarAgoraManual() { saveD(); saveM(); mostrarToast("Salvo no Firebase!"); }
-    function fecharFoto() { fecharModal('photoOverlay'); }
-    function logout() { document.getElementById('menuSection').classList.add('hidden'); document.getElementById('loginSection').classList.remove('hidden'); }
-    function voltar() { document.getElementById('planilhaSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
     function voltarAoMenu() { document.getElementById('membrosSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
-    
-    function confirmarZerar() {
-        memoria[window.setorAtivo].forEach(i => i.qtd = 0); 
-        saveD(); 
-        fecharModal('modalZerar');
-        mostrarToast("Zerado no Firebase!");
-    }
 </script>
 </body>
 </html>
