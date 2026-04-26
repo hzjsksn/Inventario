@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v3.0</title>
+    <title>Painel Koda Store - v3.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --qtd-bg: #fff9e6; --primary: #007bff; --secondary: #6c757d; --success: #28a745; --warning: #ff9800; --danger: #dc3545; --purple: #6f42c1; }
@@ -35,7 +35,7 @@
 
 <div class="container">
     <div id="loginSection">
-        <h2 style="text-align: center;">Painel</h2>
+        <h2 style="text-align: center;">Koda Store - Painel</h2>
         <div id="msgErroLogin"></div>
         <input type="text" id="usuario" class="input-single" placeholder="Usuário" autocomplete="off">
         <div class="input-row">
@@ -100,7 +100,7 @@
             <button id="op-div" class="btn-op" onclick="setOp('div')">÷</button>
         </div>
         <div id="areaCapture" style="background:white; padding:5px;"><div id="tabelasSetores"></div></div>
-        <button class="btn-green" onclick="salvarAgoraManual()">💾 SALVAR</button>
+        <button class="btn-green" onclick="salvarAgoraManual()">💾 SALVAR NO FIREBASE</button>
         <button class="btn-blue" style="background:#17a2b8" onclick="tirarFoto()">📸 PRINT</button>
         <button class="btn-green" style="background:#25d366;" onclick="enviarWhatsAppGeral()">📲 WHATSAPP</button>
         <button id="btnZerar" style="background:var(--warning)" onclick="zerarQuantidades()">🔄 ZERAR</button>
@@ -108,10 +108,9 @@
     </div>
 </div>
 
-<div class="version-footer">versão 3.0</div>
+<div class="version-footer">versão 3.0 - Firebase Integrado</div>
 
 <script>
-    // CHAVE ÚNICA DESTA VERSÃO PARA EVITAR CONFLITOS
     const CHAVE = "APP_GABRIEL_V30";
     const SUPER_USER = "37096901"; 
     const SUPER_PASS = "9996057";
@@ -187,7 +186,6 @@
         const s = document.getElementById('regSenha').value.trim(); 
         if(!u || !s) return;
         
-        // Verifica se já existe
         if(membros.find(x => x.user === u)) return dispararAviso("Usuário já existe!", "erro");
 
         membros.push({ user: u, pass: s, data: new Date().toLocaleDateString(), cargo: "Colaborador", aprovado: false });
@@ -255,7 +253,7 @@
     }
 
     function enviarWhatsAppGeral() {
-        let txt = "*Relatório - Gabriel*%0A%0A"; let d = false;
+        let txt = "*Relatório Koda Store - Gabriel*%0A%0A"; let d = false;
         Object.keys(memoria).forEach(s => { 
             const it = memoria[s].filter(x => x.qtd != 0); 
             if(it.length > 0) { d = true; txt += `--- *${s.toUpperCase()}* ---%0A`; it.forEach(i => txt += `📦 ${i.item} | Qtd: ${i.qtd}%0A`); } 
@@ -265,8 +263,11 @@
 
     function tirarFoto() { 
         html2canvas(document.getElementById('areaCapture')).then(canvas => { 
-            document.getElementById('resultImage').src = canvas.toDataURL(); 
+            const imgData = canvas.toDataURL();
+            document.getElementById('resultImage').src = imgData; 
             document.getElementById('photoOverlay').classList.remove('hidden'); 
+            // Envia a foto para o Kodular
+            if (window.AppInventor) { window.AppInventor.setWebViewString("FOTO:" + imgData); }
         }); 
     }
 
@@ -298,10 +299,25 @@
         });
     }
 
-    function salvarAgoraManual() { saveD(); saveM(); alert("Dados salvos!"); }
+    // FUNÇÃO ATUALIZADA PARA ENVIAR TUDO AO FIREBASE (VIA KODULAR)
+    function salvarAgoraManual() { 
+        saveD(); 
+        saveM(); 
+        
+        if (window.AppInventor) {
+            const payload = {
+                planilha: memoria,
+                membros: membros
+            };
+            window.AppInventor.setWebViewString("SALVAR:" + JSON.stringify(payload));
+            alert("✅ Sincronizado com Firebase!");
+        } else {
+            alert("Salvo Localmente.");
+        }
+    }
+
     function fecharFoto() { document.getElementById('photoOverlay').classList.add('hidden'); }
     
-    // LOGOUT LIMPO SEM REDIRECIONAMENTO EXTERNO
     function logout() { 
         document.getElementById('menuSection').classList.add('hidden');
         document.getElementById('loginSection').classList.remove('hidden');
