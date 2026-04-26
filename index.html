@@ -3,77 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel Koda - v3.0</title>
+    <title>Painel Koda Store - v3.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --primary: #007bff; --success: #28a745; --purple: #6f42c1; --danger: #dc3545; }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
-        .container { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
-        input { width: 100%; height: 45px; margin: 5px 0; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { border: none; border-radius: 8px; padding: 12px; width: 100%; margin-top: 10px; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .btn-purple { background: var(--purple); } .btn-green { background: var(--success); } .btn-blue { background: var(--primary); }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .container { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 550px; box-sizing: border-box; }
+        input { width: 100%; height: 45px; margin: 5px 0; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
+        button { border: none; border-radius: 8px; padding: 14px; width: 100%; margin-top: 10px; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 14px; }
+        .btn-purple { background: var(--purple); } 
+        .btn-green { background: var(--success); } 
+        .btn-blue { background: var(--primary); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+        th, td { border: 1px solid #dee2e6; padding: 10px; text-align: left; font-size: 13px; }
+        th { background: #f8f9fa; }
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="text-align:center">Koda Store</h2>
+    <h2 style="text-align: center; color: var(--purple);">Koda Store</h2>
     
     <div id="areaCadastro">
-        <input type="text" id="novoCod" placeholder="Código">
+        <input type="text" id="novoCod" placeholder="Código (ex: 09)">
         <input type="text" id="novoItem" placeholder="Nome do Produto">
         <input type="text" id="novoPreco" placeholder="R$ 0,00">
         <input type="number" id="novoQtd" placeholder="Quantidade">
-        <button class="btn-purple" onclick="adicionar()">CADASTRAR</button>
+        <button class="btn-purple" onclick="adicionarItem()">CADASTRAR</button>
     </div>
 
-    <table id="tabela">
-        <thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th></tr></thead>
-        <tbody id="corpo"></tbody>
+    <table id="tabelaDados">
+        <thead>
+            <tr>
+                <th>Cód</th>
+                <th>Item</th>
+                <th>Qtd</th>
+                <th>Preço</th>
+                <th>X</th>
+            </tr>
+        </thead>
+        <tbody id="corpoTabela"></tbody>
     </table>
 
-    <button class="btn-green" onclick="salvarAgoraManual()">💾 SALVAR</button>
+    <button class="btn-green" onclick="salvarAgoraManual()">💾 SALVAR NO FIREBASE</button>
 </div>
 
 <script>
+    // Usando a chave que aparece nos seus prints
+    const CHAVE_STORAGE = 'GABRIEL_DATA_V53';
     let memoria = [];
 
-    function adicionar() {
-        const c = document.getElementById('novoCod').value;
-        const it = document.getElementById('novoItem').value;
-        const q = document.getElementById('novoQtd').value;
-        const p = document.getElementById('novoPreco').value;
-        if(!c || !it) return;
-        memoria.push({ cod: c, item: it, qtd: q, preco: p });
-        render();
+    // Carregar dados locais ao abrir
+    window.onload = function() {
+        const salvos = localStorage.getItem(CHAVE_STORAGE);
+        if (salvos) {
+            memoria = JSON.parse(salvos);
+            renderizar();
+        }
+    };
+
+    function adicionarItem() {
+        const cod = document.getElementById('novoCod').value;
+        const item = document.getElementById('novoItem').value;
+        const qtd = document.getElementById('novoQtd').value;
+        const preco = document.getElementById('novoPreco').value;
+
+        if (!cod || !item) {
+            alert("Preencha Cód e Item!");
+            return;
+        }
+
+        memoria.push({ cod, item, qtd, preco });
+        renderizar();
+        
+        // Limpar campos
+        document.getElementById('novoCod').value = "";
+        document.getElementById('novoItem').value = "";
+        document.getElementById('novoQtd').value = "";
+        document.getElementById('novoPreco').value = "";
     }
 
-    function render() {
-        const cb = document.getElementById('corpo');
-        cb.innerHTML = "";
-        memoria.forEach((o) => {
-            cb.innerHTML += `<tr><td>${o.cod}</td><td>${o.item}</td><td>${o.qtd}</td><td>${o.preco}</td></tr>`;
+    function removerItem(index) {
+        memoria.splice(index, 1);
+        renderizar();
+    }
+
+    function renderizar() {
+        const corpo = document.getElementById('corpoTabela');
+        corpo.innerHTML = "";
+        
+        memoria.forEach((obj, index) => {
+            corpo.innerHTML += `
+                <tr>
+                    <td>${obj.cod}</td>
+                    <td>${obj.item}</td>
+                    <td>${obj.qtd}</td>
+                    <td>${obj.preco}</td>
+                    <td><button onclick="removerItem(${index})" style="background:red; padding:5px; margin:0; width:auto;">X</button></td>
+                </tr>
+            `;
         });
     }
 
-    // ESTA É A FUNÇÃO QUE CONECTA COM O KODULAR
+    // FUNÇÃO QUE ENVIA PARA O KODULAR
     function salvarAgoraManual() { 
-        const dadosParaSalvar = JSON.stringify(memoria);
+        const dadosJSON = JSON.stringify(memoria);
         
-        // 1. Salva no navegador
-        localStorage.setItem('GABRIEL_DATA_V53', dadosParaSalvar);
+        // Salva no navegador (localStorage)
+        localStorage.setItem(CHAVE_STORAGE, dadosJSON);
 
-        // 2. Tenta enviar para o Kodular
+        // Verifica se está dentro do Kodular
         if (window.AppInventor) {
-            window.AppInventor.setWebViewString("SALVAR:" + dadosParaSalvar);
-            alert("🚀 Enviando para o Firebase...");
+            // Envia o sinal para o bloco WebViewStringChange
+            window.AppInventor.setWebViewString("SALVAR:" + dadosJSON);
+            alert("🚀 Enviando dados para o Firebase...");
         } else {
-            alert("⚠️ Aberto no navegador. Use o App para salvar no Firebase.");
+            alert("✅ Dados salvos no navegador!\n(No App, isso enviaria ao Firebase)");
         }
     }
 </script>
+
 </body>
 </html>
