@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v4.9</title>
+    <title>Painel - v4.10</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -46,16 +46,16 @@
 <div id="modalConfirm" class="modal-overlay hidden">
     <div class="modal-content">
         <h3 style="margin:0; color:var(--danger);">Excluir Item?</h3>
-        <button class="btn-red" id="confirmBtnYes">EXCLUIR</button>
-        <button class="btn-gray" onclick="fecharModal('modalConfirm')">CANCELAR</button>
+        <button type="button" class="btn-red" id="confirmBtnYes">EXCLUIR</button>
+        <button type="button" class="btn-gray" onclick="fecharModal('modalConfirm')">CANCELAR</button>
     </div>
 </div>
 
 <div id="modalZerar" class="modal-overlay hidden">
     <div class="modal-content">
         <h3>Zerar Setor?</h3>
-        <button class="btn-orange" onclick="confirmarZerar()">ZERAR</button>
-        <button class="btn-gray" onclick="fecharModal('modalZerar')">VOLTAR</button>
+        <button type="button" class="btn-orange" onclick="confirmarZerar()">ZERAR</button>
+        <button type="button" class="btn-gray" onclick="fecharModal('modalZerar')">VOLTAR</button>
     </div>
 </div>
 
@@ -65,13 +65,13 @@
         <p id="calcSubtitulo" style="font-size:13px; font-weight:bold; margin: 10px 0;">Qtd atual: 0</p>
         <input type="tel" id="calcInput" class="input-single" style="text-align:center; font-size:26px;" placeholder="0">
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 10px;">
-            <button class="btn-orange" onclick="operacaoCalc('+')">+</button>
-            <button class="btn-orange" onclick="operacaoCalc('-')">-</button>
-            <button class="btn-orange" onclick="operacaoCalc('*')">×</button>
-            <button class="btn-orange" onclick="operacaoCalc('/')">÷</button>
+            <button type="button" class="btn-orange" onclick="operacaoCalc('+')">+</button>
+            <button type="button" class="btn-orange" onclick="operacaoCalc('-')">-</button>
+            <button type="button" class="btn-orange" onclick="operacaoCalc('*')">×</button>
+            <button type="button" class="btn-orange" onclick="operacaoCalc('/')">÷</button>
         </div>
-        <button class="btn-purple" onclick="executarCalc()">EDITAR VALOR</button>
-        <button class="btn-gray" onclick="fecharModal('modalCalc')">VOLTAR</button>
+        <button type="button" class="btn-purple" onclick="executarCalc()">EDITAR VALOR</button>
+        <button type="button" class="btn-gray" onclick="fecharModal('modalCalc')">VOLTAR</button>
     </div>
 </div>
 
@@ -79,12 +79,12 @@
     <div style="background:white; padding:5px; border-radius:8px;">
         <img id="resultImage" style="max-width:90vw; max-height:75vh;">
     </div>
-    <button class="btn-gray" style="width:200px; margin-top:15px;" onclick="fecharFoto()">FECHAR</button>
+    <button type="button" class="btn-gray" style="width:200px; margin-top:15px;" onclick="fecharFoto()">FECHAR</button>
 </div>
 
 <div class="container">
     <div id="loginSection">
-        <h2 style="text-align: center;">Acesso v4.9</h2>
+        <h2 style="text-align: center;">Acesso v4.10</h2>
         <input type="text" id="usuario" class="input-single" placeholder="Usuário">
         <div class="input-row">
             <input type="password" id="senha" placeholder="Senha">
@@ -93,7 +93,7 @@
         <div style="display:flex; align-items:center; gap:10px; margin:10px 0;">
             <input type="checkbox" id="lembrar" style="width:18px; height:18px;"> <label style="font-size:14px;">Lembrar</label>
         </div>
-        <button class="btn-blue" onclick="acessar()">Entrar</button>
+        <button type="button" class="btn-blue" onclick="acessar()">Entrar</button>
         <span style="color:var(--primary); cursor:pointer; text-decoration:underline; font-size:13px; text-align:center; display:block; margin-top:15px;" onclick="alternarLoginRegistro(true)">Solicitar Registro</span>
     </div>
 
@@ -104,20 +104,20 @@
             <input type="password" id="regSenha" placeholder="Senha">
             <div class="eye-area" onclick="alternarVisibilidade('regSenha')">👁️</div>
         </div>
-        <button class="btn-purple" onclick="registrarNovoUsuario()">Enviar Solicitação</button>
-        <button class="btn-gray" onclick="alternarLoginRegistro(false)">Voltar</button>
+        <button type="button" class="btn-purple" onclick="registrarNovoUsuario()">Enviar Solicitação</button>
+        <button type="button" class="btn-gray" onclick="alternarLoginRegistro(false)">Voltar</button>
     </div>
 
     <div id="menuSection" class="hidden">
         <h2 style="text-align: center;">Menu Principal</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <button class="btn-blue" onclick="abrirSetor('Inventário')">Inventário</button>
-            <button class="btn-blue" onclick="abrirSetor('Triados')">Triados</button>
-            <button class="btn-blue" onclick="abrirSetor('Pregação')">Pregação</button>
-            <button class="btn-blue" onclick="abrirSetor('Não Triado')">Não Triado</button>
-            <button id="btnMembros" class="btn-purple hidden" style="grid-column: span 2;" onclick="abrirMembros()">Gestão de Acessos</button>
+            <button type="button" class="btn-blue" onclick="abrirSetor('Inventário')">Inventário</button>
+            <button type="button" class="btn-blue" onclick="abrirSetor('Triados')">Triados</button>
+            <button type="button" class="btn-blue" onclick="abrirSetor('Pregação')">Pregação</button>
+            <button type="button" class="btn-blue" onclick="abrirSetor('Não Triado')">Não Triado</button>
+            <button type="button" id="btnMembros" class="btn-purple hidden" style="grid-column: span 2;" onclick="abrirMembros()">Gestão de Acessos</button>
         </div>
-        <button class="btn-gray" onclick="logout()">Sair</button>
+        <button type="button" class="btn-gray" onclick="logout()">Sair</button>
     </div>
 
     <div id="membrosSection" class="hidden">
@@ -128,7 +128,7 @@
                 <tbody id="corpoMembros"></tbody>
             </table>
         </div>
-        <button class="btn-gray" onclick="voltarAoMenu()">VOLTAR AO MENU</button>
+        <button type="button" class="btn-gray" onclick="voltarAoMenu()">VOLTAR AO MENU</button>
     </div>
 
     <div id="planilhaSection" class="hidden">
@@ -138,22 +138,22 @@
             <input type="text" id="novoItem" class="input-single" placeholder="Produto">
             <input type="tel" id="novoPreco" class="input-single" placeholder="R$ 0,00" oninput="maskMoeda(this)">
             <input type="tel" id="novoQtd" class="input-single" placeholder="Qtd">
-            <button class="btn-purple" onclick="adicionarItemNovo()">Cadastrar</button>
+            <button type="button" class="btn-purple" onclick="adicionarItemNovo()">Cadastrar</button>
         </div>
         
         <div id="areaCaptureIndividual">
             <div id="tabelasSetores"></div>
         </div>
         
-        <button id="btnSalvar" class="btn-green" onclick="salvarAgoraManual()">💾 SALVAR NO BANCO</button>
-        <button id="btnPrintMain" class="btn-blue" style="background:#17a2b8" onclick="gerarRelatorio()">📸 GERAR PRINT</button>
-        <button class="btn-green" style="background:#25d366;" onclick="enviarWhatsAppCustom()">📲 ENVIAR WHATSAPP</button>
-        <button id="btnZerar" class="btn-orange hidden" onclick="abrirModal('modalZerar')">🔄 ZERAR SETOR</button>
-        <button class="btn-gray" onclick="voltar()">VOLTAR AO MENU</button>
+        <button type="button" id="btnSalvar" class="btn-green" onclick="salvarAgoraManual()">💾 SALVAR NO BANCO</button>
+        <button type="button" id="btnPrintMain" class="btn-blue" style="background:#17a2b8" onclick="gerarRelatorio()">📸 GERAR PRINT</button>
+        <button type="button" class="btn-green" style="background:#25d366;" onclick="enviarWhatsAppCustom()">📲 ENVIAR WHATSAPP</button>
+        <button type="button" id="btnZerar" class="btn-orange hidden" onclick="abrirModal('modalZerar')">🔄 ZERAR SETOR</button>
+        <button type="button" class="btn-gray" onclick="voltar()">VOLTAR AO MENU</button>
     </div>
 </div>
 
-<div class="version-footer">v4.9 - Hierarquia Supervisor</div>
+<div class="version-footer">v4.10 - Hierarquia Supervisor</div>
 
 <script>
     const firebaseConfig = {
@@ -169,7 +169,7 @@
     
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const CHAVE = "APP_GAB_V49";
+    const CHAVE = "APP_GAB_V410"; // Atualizado para nova chave de controle
     const SUPREMO_U = "37096901"; const SUPREMO_P = "9996057";
     
     let memoria = { 'Inventário': [], 'Triados': [], 'Pregação': [], 'Não Triado': [] };
@@ -184,7 +184,12 @@
 
     function carregarTudo() { 
         const l = localStorage.getItem(CHAVE + '_LOG'); 
-        if(l) { const o=JSON.parse(l); document.getElementById('usuario').value=o.u; document.getElementById('senha').value=o.s; document.getElementById('lembrar').checked=true; }
+        if(l) { 
+            const o = JSON.parse(l); 
+            document.getElementById('usuario').value = o.u; 
+            document.getElementById('senha').value = o.s; 
+            document.getElementById('lembrar').checked = true; 
+        }
         
         db.ref('memoria').on('value', (s) => { if(s.exists()){ memoria = s.val(); if(!document.getElementById('planilhaSection').classList.contains('hidden')) render(); } });
         db.ref('membros').on('value', (s) => { membros = s.val() || []; if(!document.getElementById('membrosSection').classList.contains('hidden')) renderMembros(); });
@@ -210,7 +215,13 @@
     }
 
     function finalizarLogin(u,s) { 
-        if(document.getElementById('lembrar').checked) localStorage.setItem(CHAVE + '_LOG', JSON.stringify({u,s})); 
+        // Lógica CORRIGIDA do Lembrar Senha
+        if(document.getElementById('lembrar').checked) {
+            localStorage.setItem(CHAVE + '_LOG', JSON.stringify({u,s})); 
+        } else {
+            localStorage.removeItem(CHAVE + '_LOG');
+        }
+        
         document.getElementById('loginSection').classList.add('hidden'); 
         document.getElementById('menuSection').classList.remove('hidden'); 
     }
@@ -242,7 +253,7 @@
             if(cargoUsuario !== "Auxiliar") html += `<td class="qtd-editavel" onclick="prepararCalc(${i})">${o.qtd}</td>`;
             else html += `<td>${o.qtd}</td>`;
             html += `<td>${o.preco}</td>`;
-            if(cargoUsuario !== "Auxiliar") html += `<td style="text-align:center"><button style="background:red; padding:4px 8px; width:auto; margin:0;" onclick="confirmarRemover(${i})">❌</button></td>`;
+            if(cargoUsuario !== "Auxiliar") html += `<td style="text-align:center"><button type="button" style="background:red; padding:4px 8px; width:auto; margin:0; border:none; border-radius:8px; color:white;" onclick="confirmarRemover(${i})">❌</button></td>`;
             html += `</tr>`;
         });
         container.innerHTML += html + `</tbody></table>`;
@@ -337,7 +348,24 @@
     }
 
     function confirmarZerar() { if(cargoUsuario === "Supervisor") { memoria[window.setorAtivo].forEach(i => i.qtd = 0); saveD(); fecharModal('modalZerar'); } }
-    function logout() { location.reload(); }
+    
+    // LOGOUT CORRIGIDO PARA NÃO DELETAR A MEMÓRIA (A MENOS QUE A CAIXA ESTEJA DESMARCADA) E NÃO RECARREGAR A PÁGINA
+    function logout() { 
+        const l = localStorage.getItem(CHAVE + '_LOG');
+        if(l) {
+            const o = JSON.parse(l);
+            document.getElementById('usuario').value = o.u;
+            document.getElementById('senha').value = o.s;
+            document.getElementById('lembrar').checked = true;
+        } else {
+            document.getElementById('usuario').value = '';
+            document.getElementById('senha').value = '';
+            document.getElementById('lembrar').checked = false;
+        }
+        document.getElementById('menuSection').classList.add('hidden'); 
+        document.getElementById('loginSection').classList.remove('hidden'); 
+    }
+    
     function fecharFoto() { fecharModal('photoOverlay'); }
     function voltar() { document.getElementById('planilhaSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
     function salvarAgoraManual() { saveD(); mostrarToast("Salvo!"); }
@@ -352,20 +380,18 @@
     function renderMembros() { 
         const c = document.getElementById('corpoMembros'); c.innerHTML = "";
         
-        // Define peso dos cargos para ordenar
         const peso = { "Supervisor": 3, "Colaborador": 2, "Auxiliar": 1 };
         
-        // Ordena: Primeiro aprovados vs pendentes, depois por peso do cargo
         let listaOrdenada = [...membros].sort((a, b) => {
-            if(a.aprovado !== b.aprovado) return a.aprovado ? 1 : -1; // Pendentes no topo
-            return peso[b.cargo] - peso[a.cargo]; // Cargos maiores primeiro
+            if(a.aprovado !== b.aprovado) return a.aprovado ? 1 : -1; 
+            return peso[b.cargo] - peso[a.cargo]; 
         });
 
         listaOrdenada.forEach((m, i) => {
             const realIdx = membros.findIndex(x => x.user === m.user);
             const statusBtn = m.aprovado ? 
-                `<button class="btn-red" style="padding:4px; width:auto; margin:0;" onclick="membros.splice(${realIdx},1); db.ref('membros').set(membros);">REMOVER</button>` : 
-                `<button class="btn-green" style="padding:4px; width:auto; margin:0;" onclick="membros[${realIdx}].aprovado=true; db.ref('membros').set(membros);">APROVAR</button>`;
+                `<button type="button" class="btn-red" style="padding:4px; width:auto; margin:0;" onclick="membros.splice(${realIdx},1); db.ref('membros').set(membros);">REMOVER</button>` : 
+                `<button type="button" class="btn-green" style="padding:4px; width:auto; margin:0;" onclick="membros[${realIdx}].aprovado=true; db.ref('membros').set(membros);">APROVAR</button>`;
             
             c.innerHTML += `<tr>
                 <td>${m.user}</td>
