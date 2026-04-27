@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v4.24</title>
+    <title>Painel - v4.26</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -75,7 +75,9 @@
         <h3 id="calcTitulo" style="color:var(--purple); margin:0;">Editar</h3>
         <p id="calcSubtitulo" style="font-size:13px; font-weight:bold; margin: 10px 0;">Qtd atual: 0</p>
         
-        <input type="tel" id="calcInput" class="input-single" style="text-align:center; font-size:26px;" placeholder="0" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        <input type="tel" id="calcInput" class="input-single" style="text-align:center; font-size:26px; margin-bottom: 5px;" placeholder="0" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        
+        <button type="button" class="btn-gray" style="margin-top:0; margin-bottom:10px; padding:10px; background:#495057;" onclick="reverterCalc()">↩ REVERTER AO ANTERIOR</button>
         
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 10px;">
             <button type="button" class="btn-orange" onclick="operacaoCalc('+')">+</button>
@@ -98,7 +100,7 @@
 <div class="container">
     
     <div id="loginSection">
-        <h2 style="text-align: center;">Acesso v4.24</h2>
+        <h2 style="text-align: center;">Acesso v4.26</h2>
         <input type="text" id="usuario" class="input-single" placeholder="Usuário">
         <div class="input-row">
             <input type="password" id="senha" placeholder="Senha">
@@ -207,7 +209,7 @@
     </div>
 </div>
 
-<div class="version-footer">v4.24 - Trava no botão Zerar</div>
+<div class="version-footer">v4.26 - Botão de Desfazer Quantidade</div>
 
 <script>
     const firebaseConfig = {
@@ -223,7 +225,7 @@
     
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const CHAVE = "APP_GAB_V424"; 
+    const CHAVE = "APP_GAB_V426"; 
     const SUPREMO_U = "37096901"; const SUPREMO_P = "9996057";
     
     let memoria = {}; 
@@ -232,6 +234,7 @@
     let galeriaPaletes = []; 
     let cargoUsuario = ""; 
     let itemEditandoIndex = null;
+    let qtdOriginalItem = 0; // Guarda a quantidade original para reverter
     
     let toastTimeout; 
 
@@ -555,12 +558,20 @@
         };
     }
 
+    // ==========================================
+    // FUNÇÃO QUE GUARDA O VALOR ORIGINAL
+    // ==========================================
     function prepararCalc(i) { 
         if(cargoUsuario === "Auxiliar") return;
-        itemEditandoIndex = i; const item = memoria[window.setorAtivo][i]; 
+        itemEditandoIndex = i; 
+        const item = memoria[window.setorAtivo][i]; 
+        
+        qtdOriginalItem = parseInt(item.qtd) || 0; // SALVA O VALOR ORIGINAL AQUI
+        
         document.getElementById('calcTitulo').innerText = item.item; 
         document.getElementById('calcSubtitulo').innerText = "Qtd atual: " + item.qtd;
-        document.getElementById('calcInput').value = ""; abrirModal('modalCalc'); 
+        document.getElementById('calcInput').value = ""; 
+        abrirModal('modalCalc'); 
     }
 
     function operacaoCalc(op) {
@@ -579,6 +590,19 @@
         memoria[window.setorAtivo][itemEditandoIndex].qtd = parseInt(valTxt) || 0; 
         saveD(); fecharModal('modalCalc');
     }
+
+    // ==========================================
+    // NOVA FUNÇÃO: REVERTER AO VALOR ORIGINAL
+    // ==========================================
+    function reverterCalc() {
+        if(itemEditandoIndex === null) return;
+        memoria[window.setorAtivo][itemEditandoIndex].qtd = qtdOriginalItem;
+        saveD(); // Salva o original de volta no banco
+        document.getElementById('calcSubtitulo').innerText = "Qtd atual: " + qtdOriginalItem;
+        document.getElementById('calcInput').value = "";
+        mostrarToast("↩ Valor revertido!");
+    }
+    // ==========================================
 
     function adicionarItemNovo() {
         if(cargoUsuario === "Auxiliar") return;
@@ -653,9 +677,6 @@
         });
     }
 
-    // ==========================================
-    // FUNÇÃO TENTAR ZERAR (COM TRAVA DE SEGURANÇA)
-    // ==========================================
     function tentarZerar() {
         if (!memoria[window.setorAtivo] || memoria[window.setorAtivo].length === 0) {
             return mostrarToast("⚠️ Cadastre um item primeiro!");
