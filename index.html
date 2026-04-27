@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v4.26</title>
+    <title>Painel - v4.31</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -50,6 +50,14 @@
         <h3 style="margin:0; color:var(--danger);">Excluir Item?</h3>
         <button type="button" class="btn-red" id="confirmBtnYes">EXCLUIR</button>
         <button type="button" class="btn-gray" onclick="fecharModal('modalConfirm')">CANCELAR</button>
+    </div>
+</div>
+
+<div id="modalConfirmBase" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h3 style="margin:0; color:var(--danger);">Excluir da Base?</h3>
+        <button type="button" class="btn-red" id="confirmBaseBtnYes">EXCLUIR</button>
+        <button type="button" class="btn-gray" onclick="fecharModal('modalConfirmBase')">CANCELAR</button>
     </div>
 </div>
 
@@ -100,7 +108,7 @@
 <div class="container">
     
     <div id="loginSection">
-        <h2 style="text-align: center;">Acesso v4.26</h2>
+        <h2 style="text-align: center;">Acesso v4.31</h2>
         <input type="text" id="usuario" class="input-single" placeholder="Usuário">
         <div class="input-row">
             <input type="password" id="senha" placeholder="Senha">
@@ -127,15 +135,35 @@
     <div id="menuSection" class="hidden">
         <h2 style="text-align: center;">Menu Principal</h2>
         
-        <button type="button" class="btn-orange" style="margin-bottom: 15px;" onclick="abrirGaleria()">📦 Paletes (Fotos)</button>
+        <button type="button" class="btn-orange" style="margin-bottom: 15px;" onclick="abrirGaleria()">📦 Paletes (Fotos Públicas)</button>
 
         <div id="botoesSetores" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;"></div>
         
         <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button type="button" id="btnBaseProdutos" class="btn-blue hidden" style="margin-top:0; background:#17a2b8;" onclick="abrirBaseProdutos()">Base Mestra (Supremo)</button>
             <button type="button" id="btnGerenciarSetores" class="btn-purple hidden" style="margin-top:0;" onclick="abrirGerenciarSetores()">Gerenciar Planilhas (ADM)</button>
             <button type="button" id="btnMembros" class="btn-purple hidden" style="margin-top:0;" onclick="abrirMembros()">Gestão de Acessos (ADM)</button>
             <button type="button" class="btn-gray" style="margin-top:0;" onclick="logout()">Sair</button>
         </div>
+    </div>
+
+    <div id="baseProdutosSection" class="hidden">
+        <h2 style="text-align: center;">Base Mestra</h2>
+        <p style="font-size:12px; color:#666; margin:0 0 10px 0; text-align:center;">Itens adicionados aqui aparecerão na busca de todos.</p>
+        
+        <input type="tel" id="baseCod" class="input-single" placeholder="Código" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        <input type="text" id="baseNome" class="input-single" placeholder="Nome do Produto">
+        <input type="tel" id="basePreco" class="input-single" placeholder="Preço (R$ 0,00)" oninput="maskMoeda(this)">
+        
+        <button type="button" class="btn-purple" style="margin-bottom: 15px;" onclick="adicionarBaseProduto()">CADASTRAR PRODUTO</button>
+        
+        <div style="overflow-x: auto;">
+            <table>
+                <thead><tr><th>Cód</th><th>Nome</th><th>Preço</th><th>Ação</th></tr></thead>
+                <tbody id="corpoBaseProdutos"></tbody>
+            </table>
+        </div>
+        <button type="button" class="btn-gray" onclick="voltarAoMenuBase()">VOLTAR AO MENU</button>
     </div>
 
     <div id="galeriaSection" class="hidden">
@@ -189,7 +217,7 @@
             <h4 style="margin:0 0 10px 0; text-align:center; color:var(--purple)">SETOR: <span id="labelSetor"></span></h4>
             <input type="tel" id="novoCod" class="input-single" placeholder="Cód" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
             
-            <input type="text" id="novoItem" class="input-single" placeholder="Produto" autocomplete="off" oninput="buscarDadosProduto()">
+            <input type="text" id="novoItem" class="input-single" placeholder="Produto" autocomplete="off" oninput="buscarDadosProdutoGaleria()">
             <div id="sugestoesProduto" style="display:flex; flex-direction:column; gap:5px; margin-top:-5px; margin-bottom:8px; max-height:150px; overflow-y:auto;"></div>
 
             <input type="tel" id="novoPreco" class="input-single" placeholder="R$ 0,00" oninput="maskMoeda(this)">
@@ -209,7 +237,7 @@
     </div>
 </div>
 
-<div class="version-footer">v4.26 - Botão de Desfazer Quantidade</div>
+<div class="version-footer">v4.31 - Ocultar aviso de logado</div>
 
 <script>
     const firebaseConfig = {
@@ -225,16 +253,22 @@
     
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const CHAVE = "APP_GAB_V426"; 
+    const CHAVE = "APP_GAB_V431"; 
     const SUPREMO_U = "37096901"; const SUPREMO_P = "9996057";
+    
+    // Webhook do Discord Adicionado de forma silenciosa
+    const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1498267307510726766/n-o6e31-vKzTRBi4-UbaNLuCcjmJCB3c2cXwSUGr4oPgzTBWbZGF00piMQNzXaHGEVXA";
     
     let memoria = {}; 
     let membros = []; 
     let setores = []; 
     let galeriaPaletes = []; 
+    let baseProdutos = []; 
     let cargoUsuario = ""; 
+    let ehSupremo = false; 
     let itemEditandoIndex = null;
-    let qtdOriginalItem = 0; // Guarda a quantidade original para reverter
+    let qtdOriginalItem = 0; 
+    let usuarioAtivoNode = ""; 
     
     let toastTimeout; 
 
@@ -254,28 +288,17 @@
         toastTimeout = setTimeout(() => { t.className = ""; }, 3000); 
     }
 
+    function enviarParaDiscord(texto) {
+        fetch(DISCORD_WEBHOOK, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: texto })
+        }).catch(err => {
+            console.error("Erro ao conectar com Discord:", err);
+        });
+    }
+
     function carregarTudo() { 
-        const l = localStorage.getItem(CHAVE + '_LOG'); 
-        if(l) { 
-            const o = JSON.parse(l); 
-            document.getElementById('usuario').value = o.u; 
-            document.getElementById('senha').value = o.s; 
-            document.getElementById('lembrar').checked = true; 
-        }
-        
-        db.ref('setores').on('value', (s) => {
-            if(s.exists()) { setores = s.val(); } 
-            else { setores = ['Inventário', 'Triados', 'Pregação', 'Não Triado']; db.ref('setores').set(setores); }
-            if(!document.getElementById('menuSection').classList.contains('hidden')) renderMenu();
-        });
-
-        db.ref('memoria').on('value', (s) => { 
-            if(s.exists()){ 
-                memoria = s.val(); 
-                if(!document.getElementById('planilhaSection').classList.contains('hidden')) render(); 
-            } 
-        });
-
         db.ref('membros').on('value', (s) => { 
             membros = s.val() || []; 
             if(!document.getElementById('membrosSection').classList.contains('hidden')) renderMembros(); 
@@ -291,6 +314,84 @@
             }
             if(!document.getElementById('galeriaSection').classList.contains('hidden')) filtrarGaleria();
         });
+
+        db.ref('base_produtos').on('value', (s) => {
+            const data = s.val();
+            if(data) {
+                baseProdutos = Array.isArray(data) ? data : Object.values(data);
+                baseProdutos = baseProdutos.filter(p => p && p.cod);
+            } else {
+                baseProdutos = [];
+            }
+            if(!document.getElementById('baseProdutosSection').classList.contains('hidden')) renderBaseProdutos();
+        });
+
+        const l = localStorage.getItem(CHAVE + '_LOG'); 
+        if(l) { 
+            const o = JSON.parse(l); 
+            document.getElementById('usuario').value = o.u; 
+            document.getElementById('senha').value = o.s; 
+            document.getElementById('lembrar').checked = true; 
+        }
+    }
+
+    function abrirBaseProdutos() {
+        if(!ehSupremo) return;
+        document.getElementById('menuSection').classList.add('hidden');
+        document.getElementById('baseProdutosSection').classList.remove('hidden');
+        renderBaseProdutos();
+    }
+
+    function voltarAoMenuBase() {
+        document.getElementById('baseProdutosSection').classList.add('hidden');
+        document.getElementById('menuSection').classList.remove('hidden');
+    }
+
+    function adicionarBaseProduto() {
+        const c = document.getElementById('baseCod').value.trim();
+        const n = document.getElementById('baseNome').value.trim();
+        const p = document.getElementById('basePreco').value.trim() || "R$ 0,00"; 
+        
+        if(!c || !n) return mostrarToast("Preencha Código e Nome!");
+        if(baseProdutos.find(prod => prod.cod === c)) return mostrarToast("Código já existe na base!");
+
+        baseProdutos.push({cod: c, nome: n, preco: p}); 
+        db.ref('base_produtos').set(baseProdutos).then(() => {
+            document.getElementById('baseCod').value = "";
+            document.getElementById('baseNome').value = "";
+            document.getElementById('basePreco').value = "";
+            mostrarToast("✅ Produto salvo na Base!");
+        });
+    }
+
+    function renderBaseProdutos() {
+        const corpo = document.getElementById('corpoBaseProdutos');
+        corpo.innerHTML = '';
+        
+        if(baseProdutos.length === 0) {
+            corpo.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#999;">Nenhum produto cadastrado.</td></tr>`;
+            return;
+        }
+
+        baseProdutos.forEach((p, i) => {
+            corpo.innerHTML += `<tr>
+                <td>${p.cod}</td>
+                <td>${p.nome}</td>
+                <td>${p.preco || 'R$ 0,00'}</td>
+                <td style="text-align:center"><button type="button" style="background:red; padding:4px 8px; width:auto; margin:0; border:none; border-radius:8px; color:white;" onclick="confirmarExcluirBase(${i})">❌</button></td>
+            </tr>`;
+        });
+    }
+
+    function confirmarExcluirBase(i) {
+        abrirModal('modalConfirmBase');
+        document.getElementById('confirmBaseBtnYes').onclick = function() {
+            baseProdutos.splice(i, 1);
+            db.ref('base_produtos').set(baseProdutos).then(() => {
+                fecharModal('modalConfirmBase');
+                mostrarToast("✅ Excluído da base!");
+            });
+        };
     }
 
     function abrirGaleria() {
@@ -426,36 +527,44 @@
         abrirModal('photoOverlay');
     }
 
-    function buscarDadosProduto() {
+    function buscarDadosProdutoGaleria() {
         const digitado = document.getElementById('novoItem').value.trim().toLowerCase();
         const divSugestoes = document.getElementById('sugestoesProduto');
         divSugestoes.innerHTML = ''; 
 
         if(digitado.length < 2) return;
 
-        let encontrados = [];
-        let nomesVistos = new Set();
+        let encontradosMap = new Map();
 
-        Object.keys(memoria).forEach(setor => {
-            if(memoria[setor]) {
-                memoria[setor].forEach(i => {
-                    if(i.item.toLowerCase().includes(digitado) && !nomesVistos.has(i.item.toLowerCase())) {
-                        encontrados.push(i);
-                        nomesVistos.add(i.item.toLowerCase());
-                    }
-                });
+        baseProdutos.forEach(p => {
+            if((p.nome || "").toLowerCase().includes(digitado) || (p.cod || "").toLowerCase().includes(digitado)) {
+                encontradosMap.set(p.cod, { cod: p.cod, nome: p.nome, preco: p.preco || "" });
             }
         });
+
+        galeriaPaletes.forEach(p => {
+            if((p.nome || "").toLowerCase().includes(digitado) || (p.cod || "").toLowerCase().includes(digitado)) {
+                if(!encontradosMap.has(p.cod)) {
+                    encontradosMap.set(p.cod, { cod: p.cod, nome: p.nome, preco: "" });
+                }
+            }
+        });
+
+        const encontrados = Array.from(encontradosMap.values());
 
         encontrados.forEach(prod => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'btn-sugestao';
-            btn.innerHTML = `<span>📦 ${prod.item}</span> <span style="color:var(--primary); font-size:12px;">Cód: ${prod.cod}</span>`;
+            btn.innerHTML = `<span>📦 ${prod.nome}</span> <span style="color:var(--primary); font-size:12px;">Cód: ${prod.cod}</span>`;
             btn.onclick = () => {
                 document.getElementById('novoCod').value = prod.cod;
-                document.getElementById('novoItem').value = prod.item;
-                document.getElementById('novoPreco').value = prod.preco;
+                document.getElementById('novoItem').value = prod.nome;
+                
+                if(prod.preco) {
+                    document.getElementById('novoPreco').value = prod.preco;
+                }
+                
                 divSugestoes.innerHTML = ''; 
                 document.getElementById('novoQtd').focus(); 
             };
@@ -463,14 +572,14 @@
         });
     }
 
-    function saveD() { db.ref('memoria').set(memoria).then(() => render()); }
+    function saveD() { db.ref('memoria/' + usuarioAtivoNode).set(memoria).then(() => render()); }
 
     function acessar() {
         const u = document.getElementById('usuario').value.trim(), s = document.getElementById('senha').value.trim();
         if(u === SUPREMO_U && s === SUPREMO_P) { 
             cargoUsuario = "Supervisor"; 
             document.getElementById('btnMembros').classList.remove('hidden'); 
-            document.getElementById('btnGerenciarSetores').classList.remove('hidden');
+            document.getElementById('btnGerenciarSetores').classList.remove('hidden'); 
             return finalizarLogin(u,s); 
         }
         let m = membros.find(x => x.user === u && x.pass === s);
@@ -483,7 +592,7 @@
             document.getElementById('btnGerenciarSetores').classList.remove('hidden');
         } else {
             document.getElementById('btnMembros').classList.add('hidden');
-            document.getElementById('btnGerenciarSetores').classList.add('hidden');
+            document.getElementById('btnGerenciarSetores').classList.add('hidden'); 
         }
         finalizarLogin(u,s);
     }
@@ -491,9 +600,31 @@
     function finalizarLogin(u,s) { 
         if(document.getElementById('lembrar').checked) { localStorage.setItem(CHAVE + '_LOG', JSON.stringify({u,s})); } 
         else { localStorage.removeItem(CHAVE + '_LOG'); }
+        
+        ehSupremo = (u === SUPREMO_U && s === SUPREMO_P);
+        document.getElementById('btnBaseProdutos').classList.toggle('hidden', !ehSupremo); 
+        
+        usuarioAtivoNode = u.replace(/[.#$[\]]/g, '_'); 
+
+        db.ref('setores/' + usuarioAtivoNode).on('value', (s) => {
+            if(s.exists()) { setores = s.val(); } 
+            else { setores = ['Inventário', 'Triados', 'Pregação', 'Não Triado']; db.ref('setores/' + usuarioAtivoNode).set(setores); }
+            if(!document.getElementById('menuSection').classList.contains('hidden')) renderMenu();
+        });
+
+        db.ref('memoria/' + usuarioAtivoNode).on('value', (s) => { 
+            if(s.exists()){ 
+                memoria = s.val(); 
+            } else {
+                memoria = {};
+            }
+            if(!document.getElementById('planilhaSection').classList.contains('hidden')) render(); 
+        });
+
         document.getElementById('loginSection').classList.add('hidden'); 
         document.getElementById('menuSection').classList.remove('hidden'); 
-        renderMenu();
+        
+        setTimeout(() => renderMenu(), 300); 
     }
 
     function renderMenu() {
@@ -558,20 +689,15 @@
         };
     }
 
-    // ==========================================
-    // FUNÇÃO QUE GUARDA O VALOR ORIGINAL
-    // ==========================================
     function prepararCalc(i) { 
         if(cargoUsuario === "Auxiliar") return;
-        itemEditandoIndex = i; 
-        const item = memoria[window.setorAtivo][i]; 
+        itemEditandoIndex = i; const item = memoria[window.setorAtivo][i]; 
         
-        qtdOriginalItem = parseInt(item.qtd) || 0; // SALVA O VALOR ORIGINAL AQUI
+        qtdOriginalItem = parseInt(item.qtd) || 0; 
         
         document.getElementById('calcTitulo').innerText = item.item; 
         document.getElementById('calcSubtitulo').innerText = "Qtd atual: " + item.qtd;
-        document.getElementById('calcInput').value = ""; 
-        abrirModal('modalCalc'); 
+        document.getElementById('calcInput').value = ""; abrirModal('modalCalc'); 
     }
 
     function operacaoCalc(op) {
@@ -591,18 +717,14 @@
         saveD(); fecharModal('modalCalc');
     }
 
-    // ==========================================
-    // NOVA FUNÇÃO: REVERTER AO VALOR ORIGINAL
-    // ==========================================
     function reverterCalc() {
         if(itemEditandoIndex === null) return;
         memoria[window.setorAtivo][itemEditandoIndex].qtd = qtdOriginalItem;
-        saveD(); // Salva o original de volta no banco
+        saveD(); 
         document.getElementById('calcSubtitulo').innerText = "Qtd atual: " + qtdOriginalItem;
         document.getElementById('calcInput').value = "";
         mostrarToast("↩ Valor revertido!");
     }
-    // ==========================================
 
     function adicionarItemNovo() {
         if(cargoUsuario === "Auxiliar") return;
@@ -672,7 +794,7 @@
 
     function salvarAgoraManual() { 
         mostrarToast("✅ Foi salvo!"); 
-        db.ref('memoria').set(memoria).then(() => {
+        db.ref('memoria/' + usuarioAtivoNode).set(memoria).then(() => {
             render(); 
         });
     }
@@ -690,11 +812,20 @@
             mostrarToast("✅ Foi zerado!"); 
             render(); 
             fecharModal('modalZerar'); 
-            db.ref('memoria').set(memoria); 
+            db.ref('memoria/' + usuarioAtivoNode).set(memoria); 
         } 
     }
     
     function logout() { 
+        if(usuarioAtivoNode) {
+            db.ref('setores/' + usuarioAtivoNode).off();
+            db.ref('memoria/' + usuarioAtivoNode).off();
+        }
+        usuarioAtivoNode = "";
+        memoria = {};
+        setores = [];
+        ehSupremo = false;
+
         const l = localStorage.getItem(CHAVE + '_LOG');
         if(l) { const o = JSON.parse(l); document.getElementById('usuario').value = o.u; document.getElementById('senha').value = o.s; document.getElementById('lembrar').checked = true; } 
         else { document.getElementById('usuario').value = ''; document.getElementById('senha').value = ''; document.getElementById('lembrar').checked = false; }
@@ -726,7 +857,7 @@
         if(!nome) return mostrarToast("Digite um nome!");
         if(setores.find(s => s.toLowerCase() === nome.toLowerCase())) return mostrarToast("Planilha já existe!");
         setores.push(nome); if(!memoria[nome]) memoria[nome] = [];
-        db.ref('setores').set(setores); saveD();
+        db.ref('setores/' + usuarioAtivoNode).set(setores); saveD();
         document.getElementById('novoSetorNome').value = ""; renderListaSetores(); mostrarToast("Criada!");
     }
 
@@ -734,7 +865,7 @@
         abrirModal('modalConfirmSetor');
         document.getElementById('confirmSetorBtnYes').onclick = function() {
             setores = setores.filter(s => s !== nome); delete memoria[nome];
-            db.ref('setores').set(setores); saveD(); fecharModal('modalConfirmSetor'); renderListaSetores(); mostrarToast("Excluída!");
+            db.ref('setores/' + usuarioAtivoNode).set(setores); saveD(); fecharModal('modalConfirmSetor'); renderListaSetores(); mostrarToast("Excluída!");
         };
     }
 
@@ -742,6 +873,9 @@
         const u = document.getElementById('regUsuario').value.trim(), s = document.getElementById('regSenha').value.trim();
         if(!u || !s) return;
         membros.push({user:u, pass:s, cargo:"Auxiliar", aprovado:false});
+        
+        enviarParaDiscord(`🔔 **NOVA SOLICITAÇÃO DE ACESSO!**\nO usuário \`${u}\` solicitou acesso ao painel e está aguardando aprovação do Supervisor.`);
+        
         db.ref('membros').set(membros).then(() => { alternarLoginRegistro(false); mostrarToast("Solicitado!"); });
     }
 
