@@ -731,6 +731,7 @@
         const c = document.getElementById('novoCod').value, it = document.getElementById('novoItem').value, p = document.getElementById('novoPreco').value || "R$ 0,00", q = document.getElementById('novoQtd').value || "0";
         if(!c || !it) return;
         if(!memoria[window.setorAtivo]) memoria[window.setorAtivo] = [];
+        if(memoria[window.setorAtivo].find(produto => produto.cod === c)) return mostrarToast("Item já existe nesta planilha!");
         memoria[window.setorAtivo].push({ cod: c, item: it, qtd: q, preco: p });
         saveD(); 
         document.getElementById('sugestoesProduto').innerHTML = '';
@@ -904,4 +905,3 @@
 </script>
 </body>
 </html>
-
