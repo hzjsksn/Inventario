@@ -237,7 +237,7 @@
     </div>
 </div>
 
-<div class="version-footer">v4.32 - Correção no Input de Foto</div>
+<div class="version-footer">v4.32 - Usando Kodular WebString</div>
 
 <script>
     const firebaseConfig = {
@@ -781,6 +781,7 @@
         }, 400);
     }
 
+    // NOVA FUNÇÃO ENVIAR WHATSAPP (Sussurra para o Kodular)
     function enviarWhatsAppCustom() {
         let txt = ""; 
         let tem = false;
@@ -800,15 +801,8 @@
         
         if(tem) { 
             const uri = encodeURIComponent(txt.trim());
-            const isAndroid = /android/i.test(navigator.userAgent);
-            
-            if (isAndroid) {
-                // Força o Kodular/Android a abrir o app do WhatsApp direto
-                window.location.href = `intent://send?text=${uri}#Intent;scheme=whatsapp;package=com.whatsapp;end`;
-            } else {
-                // Fallback para PC ou navegador normal
-                window.open(`https://api.whatsapp.com/send?text=${uri}`, '_blank');
-            }
+            // Isso aqui vai acionar o bloco "Web View String Change" no Kodular!
+            window.AppInventor.setWebViewString("whatsapp://send?text=" + uri);
         } else {
             mostrarToast("Nenhum item com quantidade maior que zero para enviar!");
         }
