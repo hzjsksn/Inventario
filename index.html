@@ -799,8 +799,8 @@
         });
         
         if(tem) { 
-            // Usando o esquema nativo do Android para forçar o Kodular a abrir o app do WhatsApp
-            window.location.href = `whatsapp://send?text=${encodeURIComponent(txt.trim())}`; 
+            // Voltando para o link padrão https://wa.me que o Kodular/WebViewer aceita sem dar erro
+            window.open(`https://wa.me/?text=${encodeURIComponent(txt.trim())}`, '_blank'); 
         } else {
             mostrarToast("Nenhum item com quantidade maior que zero para enviar!");
         }
