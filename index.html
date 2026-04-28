@@ -799,8 +799,16 @@
         });
         
         if(tem) { 
-            // Voltando para o link padrão https://wa.me que o Kodular/WebViewer aceita sem dar erro
-            window.open(`https://wa.me/?text=${encodeURIComponent(txt.trim())}`, '_blank'); 
+            const uri = encodeURIComponent(txt.trim());
+            const isAndroid = /android/i.test(navigator.userAgent);
+            
+            if (isAndroid) {
+                // Força o Kodular/Android a abrir o app do WhatsApp direto
+                window.location.href = `intent://send?text=${uri}#Intent;scheme=whatsapp;package=com.whatsapp;end`;
+            } else {
+                // Fallback para PC ou navegador normal
+                window.open(`https://api.whatsapp.com/send?text=${uri}`, '_blank');
+            }
         } else {
             mostrarToast("Nenhum item com quantidade maior que zero para enviar!");
         }
