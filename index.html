@@ -799,8 +799,8 @@
         });
         
         if(tem) { 
-            // Usando api.whatsapp.com que costuma ser mais estável para links diretos
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(txt.trim())}`, '_blank'); 
+            // Usando o esquema nativo do Android para forçar o Kodular a abrir o app do WhatsApp
+            window.location.href = `whatsapp://send?text=${encodeURIComponent(txt.trim())}`; 
         } else {
             mostrarToast("Nenhum item com quantidade maior que zero para enviar!");
         }
