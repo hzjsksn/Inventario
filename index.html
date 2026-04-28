@@ -1,0 +1,24 @@
+    function enviarWhatsAppCustom() {
+        let txt = ""; 
+        let tem = false;
+        const setoresUnificados = ['Triados', 'Não Triado', 'Pregação'];
+        const setoresPrint = setoresUnificados.includes(window.setorAtivo) ? setoresUnificados : [window.setorAtivo];
+        
+        setoresPrint.forEach(s => {
+            const itens = (memoria[s] || []).filter(x => parseInt(x.qtd) > 0);
+            if(itens.length > 0) {
+                tem = true; 
+                txt += `📍 *SETOR: ${s.toUpperCase()}*\n\n`; 
+                itens.forEach(i => {
+                    txt += `📊 Dados do Item\n━━━━━━━━━━━━━━\n🆔 Código: ${i.cod}\n📦 Produto: ${i.item}\n💰 Valor Unitário: ${i.preco}\n🔢 Quantidade em Estoque: ${i.qtd}\n━━━━━━━━━━━━━━\n\n`;
+                }); 
+            } 
+        });
+        
+        if(tem) { 
+            // Usando api.whatsapp.com que costuma ser mais estável para links diretos
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(txt.trim())}`, '_blank'); 
+        } else {
+            mostrarToast("Nenhum item com quantidade maior que zero para enviar!");
+        }
+    }
