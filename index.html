@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v4.34</title>
+    <title>Painel - v4.35</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -107,7 +107,7 @@
 <div class="container">
     
     <div id="loginSection">
-        <h2 style="text-align: center;">Acesso v4.34</h2>
+        <h2 style="text-align: center;">Acesso v4.35</h2>
         <input type="text" id="usuario" class="input-single" placeholder="Usuário">
         <div class="input-row">
             <input type="password" id="senha" placeholder="Senha">
@@ -233,7 +233,7 @@
         <button type="button" class="btn-green" style="background:#25d366;" onclick="enviarWhatsAppCustom()">📲 ENVIAR WHATSAPP</button>
         <button type="button" id="btnZerar" class="btn-orange hidden" onclick="tentarZerar()">🔄 ZERAR SETOR</button>
         <button type="button" id="btnHistorico" class="btn-gray hidden" style="background:#495057;" onclick="abrirHistorico()">📋 HISTÓRICO</button>
-        <button type="button" class="btn-gray" style="background:#dc3545;" onclick="exportarPDF()">📄 EXPORTAR PDF</button>
+        <button type="button" class="btn-gray" style="background:#dc3545;" onclick="exportarPDF()">📄 EXPORTAR RELATÓRIO</button>
         <button type="button" class="btn-gray" onclick="voltar()">VOLTAR AO MENU</button>
     </div>
 </div>
@@ -247,7 +247,7 @@
     </div>
 </div>
 
-<div class="version-footer">v4.34 - Modo Escuro, PDF, Histórico e Melhorias</div>
+<div class="version-footer">v4.35 - Removido jsPDF, relatório HTML</div>
 
 <script>
     const firebaseConfig = {
@@ -280,7 +280,12 @@
     let qtdOriginalItem = 0; 
     let usuarioAtivoNode = ""; 
     
-    let toastTimeout; 
+    // Storage compatível com Kodular WebViewer
+    const Storage = {
+        get: (key) => { try { return Storage.get(key) || sessionStorage.getItem(key); } catch(e) { return null; } },
+        set: (key, val) => { try { Storage.set(key, val); } catch(e) { try { sessionStorage.setItem(key, val); } catch(e2) {} } },
+        remove: (key) => { try { Storage.remove(key); } catch(e) { try { sessionStorage.removeItem(key); } catch(e2) {} } }
+    };
 
     function maskMoeda(i) { let v = i.value.replace(/\D/g, ""); v = (v/100).toFixed(2).replace(".",","); i.value = "R$ " + v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1."); }
     function alternarVisibilidade(id) { const i = document.getElementById(id); i.type = i.type === "password" ? "text" : "password"; }
@@ -290,11 +295,11 @@
     function toggleDarkMode() {
         const isDark = document.body.classList.toggle('dark');
         document.getElementById('btnDarkMode').innerText = isDark ? '☀️' : '🌙';
-        localStorage.setItem(CHAVE + '_DARK', isDark ? '1' : '0');
+        Storage.set(CHAVE + '_DARK', isDark ? '1' : '0');
     }
 
     function aplicarTemaInicial() {
-        const dark = localStorage.getItem(CHAVE + '_DARK');
+        const dark = Storage.get(CHAVE + '_DARK');
         if(dark === '1') { document.body.classList.add('dark'); document.getElementById('btnDarkMode').innerText = '☀️'; }
     }
 
@@ -356,7 +361,7 @@
             if(!document.getElementById('baseProdutosSection').classList.contains('hidden')) renderBaseProdutos();
         });
 
-        const l = localStorage.getItem(CHAVE + '_LOG'); 
+        const l = Storage.get(CHAVE + '_LOG'); 
         if(l) { 
             const o = JSON.parse(l); 
             document.getElementById('usuario').value = o.u; 
@@ -630,8 +635,8 @@
     }
 
     function finalizarLogin(u,s) { 
-        if(document.getElementById('lembrar').checked) { localStorage.setItem(CHAVE + '_LOG', JSON.stringify({u,s})); } 
-        else { localStorage.removeItem(CHAVE + '_LOG'); }
+        if(document.getElementById('lembrar').checked) { Storage.set(CHAVE + '_LOG', JSON.stringify({u,s})); } 
+        else { Storage.remove(CHAVE + '_LOG'); }
         
         ehSupremo = (u === SUPREMO_U && s === SUPREMO_P);
         document.getElementById('btnBaseProdutos').classList.toggle('hidden', !ehSupremo); 
@@ -745,53 +750,46 @@
     }
 
     function exportarPDF() {
-        const { jsPDF } = window.jspdf;
         const setoresUnificados = ['Triados', 'Não Triado', 'Pregação'];
         const setoresPDF = setoresUnificados.includes(window.setorAtivo) ? setoresUnificados : [window.setorAtivo];
-
-        const doc = new jsPDF();
         const agora = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-        let y = 15;
         let temDados = false;
-
-        // Cabeçalho
-        doc.setFontSize(16);
-        doc.setTextColor(111, 66, 193);
-        doc.text('RELATÓRIO DE ESTOQUE', 105, y, { align: 'center' });
-        y += 8;
-        doc.setFontSize(9);
-        doc.setTextColor(150);
-        doc.text('Gerado em: ' + agora, 105, y, { align: 'center' });
-        y += 10;
+        let html = `<html><head><meta charset="UTF-8">
+        <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { color: #6f42c1; text-align: center; }
+            p { text-align: center; color: #999; font-size: 12px; margin-top: -10px; }
+            h3 { background: #6f42c1; color: white; padding: 8px; border-radius: 5px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            th { background: #6f42c1; color: white; padding: 8px; text-align: left; }
+            td { border: 1px solid #ddd; padding: 6px; font-size: 13px; }
+            tr:nth-child(even) { background: #f5f0ff; }
+        </style></head><body>
+        <h1>RELATÓRIO DE ESTOQUE</h1>
+        <p>Gerado em: ${agora}</p>`;
 
         setoresPDF.forEach(s => {
             const itens = (memoria[s] || []).filter(x => parseInt(x.qtd) > 0);
             if(itens.length === 0) return;
             temDados = true;
-
-            doc.setFontSize(12);
-            doc.setTextColor(50, 50, 50);
-            doc.text(s.toUpperCase(), 14, y);
-            y += 2;
-
-            doc.autoTable({
-                startY: y,
-                head: [['Código', 'Produto', 'Qtd', 'Preço']],
-                body: itens.map(i => [i.cod, i.item, i.qtd, i.preco]),
-                styles: { fontSize: 9, cellPadding: 3 },
-                headStyles: { fillColor: [111, 66, 193], textColor: 255 },
-                alternateRowStyles: { fillColor: [245, 245, 255] },
-                margin: { left: 14, right: 14 },
-            });
-
-            y = doc.lastAutoTable.finalY + 10;
+            html += `<h3>${s.toUpperCase()}</h3>
+            <table><thead><tr><th>Código</th><th>Produto</th><th>Qtd</th><th>Preço</th></tr></thead><tbody>`;
+            itens.forEach(i => { html += `<tr><td>${i.cod}</td><td>${i.item}</td><td>${i.qtd}</td><td>${i.preco}</td></tr>`; });
+            html += `</tbody></table>`;
         });
+
+        html += `</body></html>`;
 
         if(!temDados) return mostrarToast("Nenhum item com quantidade para exportar!");
 
-        const nomeArquivo = `estoque_${window.setorAtivo.replace(/ /g,'_')}_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.pdf`;
-        doc.save(nomeArquivo);
-        mostrarToast("✅ PDF gerado!");
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `estoque_${window.setorAtivo.replace(/ /g,'_')}_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.html`;
+        a.click();
+        URL.revokeObjectURL(url);
+        mostrarToast("✅ Relatório gerado!");
     }
         const agora = new Date();
         const data = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
@@ -1019,7 +1017,7 @@
         setores = [];
         ehSupremo = false;
 
-        const l = localStorage.getItem(CHAVE + '_LOG');
+        const l = Storage.get(CHAVE + '_LOG');
         if(l) { const o = JSON.parse(l); document.getElementById('usuario').value = o.u; document.getElementById('senha').value = o.s; document.getElementById('lembrar').checked = true; } 
         else { document.getElementById('usuario').value = ''; document.getElementById('senha').value = ''; document.getElementById('lembrar').checked = false; }
         document.getElementById('menuSection').classList.add('hidden'); document.getElementById('loginSection').classList.remove('hidden'); 
