@@ -237,7 +237,7 @@
     </div>
 </div>
 
-<div class="version-footer">v4.32 - Usando Kodular WebString</div>
+<div class="version-footer">v4.32 - Usando Kodular WebString Flexível</div>
 
 <script>
     const firebaseConfig = {
@@ -733,7 +733,6 @@
         if(!memoria[window.setorAtivo]) memoria[window.setorAtivo] = [];
         if(memoria[window.setorAtivo].find(produto => produto.cod === c)) return mostrarToast("Item já existe nesta planilha!");
         
-        // --- ADIÇÃO AUTOMÁTICA NA BASE MESTRA ---
         if(!baseProdutos.find(prod => prod.cod === c)) {
             baseProdutos.push({cod: c, nome: it, preco: p});
             db.ref('base_produtos').set(baseProdutos);
@@ -781,7 +780,10 @@
         }, 400);
     }
 
-    // NOVA FUNÇÃO ENVIAR WHATSAPP (Sussurra para o Kodular)
+    // =====================================================
+    // FUNÇÃO WHATSAPP CORRIGIDA PARA KODULAR
+    // Usa retry para aguardar o AppInventor inicializar
+    // =====================================================
     function enviarWhatsAppCustom() {
         let txt = ""; 
         let tem = false;
@@ -799,13 +801,23 @@
             } 
         });
         
-        if(tem) { 
-            const uri = encodeURIComponent(txt.trim());
-            // Isso aqui vai acionar o bloco "Web View String Change" no Kodular!
-            window.AppInventor.setWebViewString("whatsapp://send?text=" + uri);
-        } else {
-            mostrarToast("Nenhum item com quantidade maior que zero para enviar!");
+        if(!tem) return mostrarToast("Nenhum item com quantidade maior que zero para enviar!");
+
+        const uri = encodeURIComponent(txt.trim());
+
+        // Tenta via Kodular com retry (AppInventor pode demorar a inicializar no WebViewer externo)
+        function tentarKodular(tentativas) {
+            if (typeof window.AppInventor !== 'undefined' && typeof window.AppInventor.setWebViewString === 'function') {
+                window.AppInventor.setWebViewString("whatsapp://send?text=" + uri);
+            } else if (tentativas > 0) {
+                setTimeout(() => tentarKodular(tentativas - 1), 300);
+            } else {
+                // Fallback para navegador comum
+                window.open("https://wa.me/?text=" + uri, '_blank');
+            }
         }
+
+        tentarKodular(5);
     }
 
     function salvarAgoraManual() { 
