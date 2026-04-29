@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v4.35</title>
+    <title>Painel - v4.37</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -107,11 +107,11 @@
 <div class="container">
     
     <div id="loginSection">
-        <h2 style="text-align: center;">Acesso v4.35</h2>
+        <h2 style="text-align: center;">Acesso v4.37</h2>
         <input type="text" id="usuario" class="input-single" placeholder="Usuário">
         <div class="input-row">
             <input type="password" id="senha" placeholder="Senha">
-            <div class="eye-area" onclick="alternarVisibilidade('senha')">👁️</div>
+            <button type="button" class="eye-area" onclick="alternarVisibilidade('senha')" style="color:var(--text); background:var(--th-bg);">👁️</button>
         </div>
         <div style="display:flex; align-items:center; gap:10px; margin:10px 0;">
             <input type="checkbox" id="lembrar" style="width:18px; height:18px;"> <label style="font-size:14px;">Lembrar</label>
@@ -125,7 +125,7 @@
         <input type="text" id="regUsuario" class="input-single" placeholder="Usuário">
         <div class="input-row">
             <input type="password" id="regSenha" placeholder="Senha">
-            <div class="eye-area" onclick="alternarVisibilidade('regSenha')">👁️</div>
+            <button type="button" class="eye-area" onclick="alternarVisibilidade('regSenha')" style="color:var(--text); background:var(--th-bg);">👁️</button>
         </div>
         <button type="button" class="btn-purple" onclick="registrarNovoUsuario()">Enviar Solicitação</button>
         <button type="button" class="btn-gray" onclick="alternarLoginRegistro(false)">Voltar</button>
@@ -247,7 +247,7 @@
     </div>
 </div>
 
-<div class="version-footer">v4.35 - Removido jsPDF, relatório HTML</div>
+<div class="version-footer">v4.37 - Removido jsPDF, relatório HTML</div>
 
 <script>
     const firebaseConfig = {
@@ -791,6 +791,8 @@
         URL.revokeObjectURL(url);
         mostrarToast("✅ Relatório gerado!");
     }
+
+    function registrarHistorico(item, qtdAntes, qtdDepois) {
         const agora = new Date();
         const data = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
         const registro = {
@@ -1080,6 +1082,8 @@
             });
         };
     }
+
+    function alterarSenha(idx) {
         const input = document.getElementById('senhaInput_' + idx);
         const novaSenha = input.value.trim();
         if(!novaSenha) return mostrarToast("Digite a nova senha!");
