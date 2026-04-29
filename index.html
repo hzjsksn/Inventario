@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v4.58</title>
+    <title>Painel - v4.60</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -11,7 +11,8 @@
         :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --qtd-bg: #fff9e6; --primary: #007bff; --secondary: #6c757d; --success: #28a745; --warning: #ff9800; --danger: #dc3545; --purple: #6f42c1; --border: #ddd; --input-bg: #fff; --table-bg: #fff; --th-bg: #f8f9fa; }
         body.dark { --bg: #0f0f0f; --card: #1e1e1e; --text: #e0e0e0; --qtd-bg: #2a2a1a; --border: #444; --input-bg: #2a2a2a; --table-bg: #1e1e1e; --th-bg: #2a2a2a; }
         body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100dvh; box-sizing: border-box; transition: background 0.3s, color 0.3s; }
-        body.login-mode { justify-content: center; min-height: 100dvh; }
+        body.login-mode { justify-content: center; }
+        body.login-mode .version-footer { position: fixed; bottom: 10px; left: 0; width: 100%; }
         .container { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); width: 100%; max-width: 650px; box-sizing: border-box; transition: background 0.3s; }
         .hidden { display: none !important; }
         .version-footer { font-size: 10px; color: #bbb; text-align: center; margin-top: 20px; width: 100%; }
@@ -217,7 +218,7 @@
     </div>
 </div>
 
-<div class="version-footer">v4.58 - Painel de Inventário</div>
+<div class="version-footer">v4.60 - Painel de Inventário</div>
 
 <script>
     const firebaseConfig = {
@@ -744,7 +745,9 @@
 
     document.addEventListener('touchstart', resetarInatividade);
     document.addEventListener('click', resetarInatividade);
-    document.addEventListener('keydown', resetarInatividade); document.getElementById('loginSection').classList.toggle('hidden', r); document.getElementById('registroSection').classList.toggle('hidden', !r); }
+    document.addEventListener('keydown', resetarInatividade);
+
+    function alternarLoginRegistro(r) { document.getElementById('loginSection').classList.toggle('hidden', r); document.getElementById('registroSection').classList.toggle('hidden', !r); }
     function abrirMembros() { if(cargoUsuario === "Supervisor") { document.getElementById('menuSection').classList.add('hidden'); document.getElementById('membrosSection').classList.remove('hidden'); renderMembros(); } }
     function voltarAoMenu() { document.getElementById('membrosSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
 </script>
