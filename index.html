@@ -19,7 +19,7 @@
         .eye-area { width: 55px; height: 100%; background: #f8f9fa; border-left: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
         .input-single { width: 100%; height: 50px; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
         
-        button { border: none; border-radius: 8px; cursor: pointer; font-weight: bold; padding: 14px; width: 100%; margin-top: 10px; font-size: 14px; color: white; text-transform: uppercase; outline: none; -webkit-tap-highlight-color: transparent; }
+        button { border: none; border-radius: 8px; cursor: pointer; font-weight: bold; padding: 14px; width: 100%; margin-top: 10px; font-size: 14px; color: white; text-transform: uppercase; }
         .btn-blue { background: var(--primary); } .btn-purple { background: var(--purple); } .btn-green { background: var(--success); } .btn-gray { background: var(--secondary); } .btn-orange { background: var(--warning); }
         .btn-red { background: var(--danger); }
 
@@ -233,16 +233,7 @@
         <button type="button" id="btnPrintMain" class="btn-blue" style="background:#17a2b8" onclick="gerarRelatorio()">📸 GERAR PRINT</button>
         <button type="button" class="btn-green" style="background:#25d366;" onclick="enviarWhatsAppCustom()">📲 ENVIAR WHATSAPP</button>
         <button type="button" id="btnZerar" class="btn-orange hidden" onclick="tentarZerar()">🔄 ZERAR SETOR</button>
-        <button type="button" id="btnHistorico" class="btn-gray hidden" style="background:#495057;" onclick="abrirHistorico()">📋 HISTÓRICO</button>
         <button type="button" class="btn-gray" onclick="voltar()">VOLTAR AO MENU</button>
-    </div>
-</div>
-
-<div id="modalHistorico" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width:420px; max-height:80vh; overflow-y:auto;">
-        <h3 style="margin:0 0 15px 0; color:var(--purple);">📋 Histórico</h3>
-        <div id="listaHistorico"></div>
-        <button type="button" class="btn-gray" onclick="fecharModal('modalHistorico')">FECHAR</button>
     </div>
 </div>
 
@@ -263,7 +254,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const CHAVE = "APP_GAB_V432"; 
-    let SUPREMO_U = ""; let SUPREMO_P = "";
+    const SUPREMO_U = "37096901"; const SUPREMO_P = "9996057";
     
     // Webhook Discord
     const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1498267307510726766/n-o6e31-vKzTRBi4-UbaNLuCcjmJCB3c2cXwSUGr4oPgzTBWbZGF00piMQNzXaHGEVXA";
@@ -307,15 +298,7 @@
         });
     }
 
-    function carregarTudo() {
-        // Carrega credenciais do Supremo do Firebase (nunca ficam expostas no código)
-        db.ref('supremo').once('value', (s) => {
-            if(s.exists()) {
-                SUPREMO_U = s.val().user || "";
-                SUPREMO_P = s.val().pass || "";
-            }
-        });
-
+    function carregarTudo() { 
         db.ref('membros').on('value', (s) => { 
             membros = s.val() || []; 
             if(!document.getElementById('membrosSection').classList.contains('hidden')) renderMembros(); 
@@ -593,8 +576,6 @@
 
     function acessar() {
         const u = document.getElementById('usuario').value.trim(), s = document.getElementById('senha').value.trim();
-        if(!u || !s) return mostrarToast("Preencha usuário e senha!");
-        if(!SUPREMO_U) return mostrarToast("Aguarde, carregando...");
         if(u === SUPREMO_U && s === SUPREMO_P) { 
             cargoUsuario = "Supervisor"; 
             document.getElementById('btnMembros').classList.remove('hidden'); 
@@ -662,7 +643,6 @@
         document.getElementById('areaCadastro').classList.toggle('hidden', ehAuxiliar);
         document.getElementById('btnSalvar').classList.toggle('hidden', ehAuxiliar);
         document.getElementById('btnZerar').classList.toggle('hidden', !ehSupervisor);
-        document.getElementById('btnHistorico').classList.toggle('hidden', !ehSupervisor);
         
         const btnPrint = document.getElementById('btnPrintMain');
         const setoresUnificados = ['Triados', 'Não Triado', 'Pregação'];
@@ -720,50 +700,12 @@
         document.getElementById('calcInput').value = ""; abrirModal('modalCalc'); 
     }
 
-    function registrarHistorico(item, qtdAntes, qtdDepois) {
-        const agora = new Date();
-        const data = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-        const registro = {
-            usuario: usuarioAtivoNode,
-            setor: window.setorAtivo,
-            item: item,
-            de: qtdAntes,
-            para: qtdDepois,
-            data: data
-        };
-        db.ref('historico').push(registro);
-    }
-
-    function abrirHistorico() {
-        abrirModal('modalHistorico');
-        const lista = document.getElementById('listaHistorico');
-        lista.innerHTML = '<p style="color:#999; font-size:13px;">Carregando...</p>';
-        db.ref('historico').orderByKey().limitToLast(50).once('value', (s) => {
-            const data = s.val();
-            if(!data) { lista.innerHTML = '<p style="color:#999; font-size:13px;">Nenhum registro ainda.</p>'; return; }
-            const registros = Object.values(data).reverse();
-            lista.innerHTML = registros.map(r => `
-                <div style="border-left:3px solid var(--purple); padding:8px 10px; margin-bottom:10px; background:#f8f9fa; border-radius:0 8px 8px 0; text-align:left;">
-                    <div style="font-size:12px; font-weight:bold; color:var(--purple);">${r.item}</div>
-                    <div style="font-size:11px; color:#555;">Setor: ${r.setor}</div>
-                    <div style="font-size:12px; margin:4px 0;">
-                        <span style="color:var(--danger);">${r.de}</span> → <span style="color:var(--success);">${r.para}</span>
-                    </div>
-                    <div style="font-size:10px; color:#999;">👤 ${r.usuario} • ${r.data}</div>
-                </div>
-            `).join('');
-        });
-    }
-
     function operacaoCalc(op) {
         const valTxt = document.getElementById('calcInput').value.trim();
         if(valTxt === "") return mostrarToast("Digite valor!");
         let val = parseInt(valTxt) || 0, atual = parseInt(memoria[window.setorAtivo][itemEditandoIndex].qtd) || 0;
-        const antes = atual;
         if(op==='+') atual += val; else if(op==='-') atual -= val; else if(op==='*') atual *= val; else if(op==='/') atual = val!==0?Math.round(atual/val):0;
-        memoria[window.setorAtivo][itemEditandoIndex].qtd = atual;
-        registrarHistorico(memoria[window.setorAtivo][itemEditandoIndex].item, antes, atual);
-        saveD();
+        memoria[window.setorAtivo][itemEditandoIndex].qtd = atual; saveD();
         document.getElementById('calcSubtitulo').innerText = "Qtd atual: " + atual;
         document.getElementById('calcInput').value = "";
     }
@@ -771,18 +713,13 @@
     function executarCalc() {
         const valTxt = document.getElementById('calcInput').value.trim();
         if(valTxt === "") return mostrarToast("Digite valor!");
-        const antes = parseInt(memoria[window.setorAtivo][itemEditandoIndex].qtd) || 0;
-        const depois = parseInt(valTxt) || 0;
-        memoria[window.setorAtivo][itemEditandoIndex].qtd = depois;
-        registrarHistorico(memoria[window.setorAtivo][itemEditandoIndex].item, antes, depois);
+        memoria[window.setorAtivo][itemEditandoIndex].qtd = parseInt(valTxt) || 0; 
         saveD(); fecharModal('modalCalc');
     }
 
     function reverterCalc() {
         if(itemEditandoIndex === null) return;
-        const antes = parseInt(memoria[window.setorAtivo][itemEditandoIndex].qtd) || 0;
         memoria[window.setorAtivo][itemEditandoIndex].qtd = qtdOriginalItem;
-        registrarHistorico(memoria[window.setorAtivo][itemEditandoIndex].item, antes, qtdOriginalItem);
         saveD(); 
         document.getElementById('calcSubtitulo').innerText = "Qtd atual: " + qtdOriginalItem;
         document.getElementById('calcInput').value = "";
@@ -970,14 +907,6 @@
         db.ref('membros').set(membros).then(() => { alternarLoginRegistro(false); mostrarToast("Solicitado!"); });
     }
 
-    function alterarSenha(idx) {
-        const input = document.getElementById('senhaInput_' + idx);
-        const novaSenha = input.value.trim();
-        if(!novaSenha) return mostrarToast("Digite a nova senha!");
-        membros[idx].pass = novaSenha;
-        db.ref('membros').set(membros).then(() => mostrarToast("✅ Senha alterada!"));
-    }
-
     function renderMembros() { 
         const c = document.getElementById('corpoMembros'); c.innerHTML = "";
         const peso = { "Supervisor": 3, "Colaborador": 2, "Auxiliar": 1 };
@@ -987,13 +916,7 @@
             const statusBtn = m.aprovado ? 
                 `<button type="button" class="btn-red" style="padding:4px; width:auto; margin:0; border:none; border-radius:8px; color:white;" onclick="membros.splice(${realIdx},1); db.ref('membros').set(membros);">REMOVER</button>` : 
                 `<button type="button" class="btn-green" style="padding:4px; width:auto; margin:0; border:none; border-radius:8px; color:white;" onclick="membros[${realIdx}].aprovado=true; db.ref('membros').set(membros);">APROVAR</button>`;
-            c.innerHTML += `<tr><td>${m.user}</td>
-            <td>
-                <div style="display:flex; gap:4px; align-items:center;">
-                    <input id="senhaInput_${realIdx}" type="text" value="${m.pass}" style="width:70px; padding:3px; font-size:11px; border:1px solid #ddd; border-radius:4px;">
-                    <button type="button" onclick="alterarSenha(${realIdx})" style="background:var(--purple); padding:3px 5px; width:auto; margin:0; border:none; border-radius:4px; color:white; font-size:10px;">OK</button>
-                </div>
-            </td><td>
+            c.innerHTML += `<tr><td>${m.user}</td><td>${m.pass}</td><td>
                 <select onchange="membros[${realIdx}].cargo=this.value; db.ref('membros').set(membros);">
                     <option value="Supervisor" ${m.cargo==='Supervisor'?'selected':''}>Supervisor</option>
                     <option value="Colaborador" ${m.cargo==='Colaborador'?'selected':''}>Colaborador</option>
