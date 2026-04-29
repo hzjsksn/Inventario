@@ -3,44 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v4.32</title>
+    <title>Painel - v4.34</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
-        :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --qtd-bg: #fff9e6; --primary: #007bff; --secondary: #6c757d; --success: #28a745; --warning: #ff9800; --danger: #dc3545; --purple: #6f42c1; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 98vh; box-sizing: border-box; }
-        .container { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); width: 100%; max-width: 650px; box-sizing: border-box; }
+        :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --qtd-bg: #fff9e6; --primary: #007bff; --secondary: #6c757d; --success: #28a745; --warning: #ff9800; --danger: #dc3545; --purple: #6f42c1; --border: #ddd; --input-bg: #fff; --table-bg: #fff; --th-bg: #f8f9fa; }
+        body.dark { --bg: #0f0f0f; --card: #1e1e1e; --text: #e0e0e0; --qtd-bg: #2a2a1a; --border: #444; --input-bg: #2a2a2a; --table-bg: #1e1e1e; --th-bg: #2a2a2a; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 98vh; box-sizing: border-box; transition: background 0.3s, color 0.3s; }
+        .container { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); width: 100%; max-width: 650px; box-sizing: border-box; transition: background 0.3s; }
         .hidden { display: none !important; }
         .version-footer { font-size: 10px; color: #bbb; text-align: center; margin-top: 20px; width: 100%; }
-        
-        .input-row { display: flex; width: 100%; margin: 8px 0; background: #fff; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; height: 50px; align-items: center; }
-        .input-row input { flex: 1; border: none; padding: 0 12px; font-size: 16px; outline: none; background: transparent; height: 100%; }
-        .eye-area { width: 55px; height: 100%; background: #f8f9fa; border-left: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
-        .input-single { width: 100%; height: 50px; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
-        
-        button { border: none; border-radius: 8px; cursor: pointer; font-weight: bold; padding: 14px; width: 100%; margin-top: 10px; font-size: 14px; color: white; text-transform: uppercase; }
+        .input-row { display: flex; width: 100%; margin: 8px 0; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; height: 50px; align-items: center; }
+        .input-row input { flex: 1; border: none; padding: 0 12px; font-size: 16px; outline: none; background: transparent; height: 100%; color: var(--text); }
+        .eye-area { width: 55px; height: 100%; background: var(--th-bg); border-left: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
+        .input-single { width: 100%; height: 50px; padding: 12px; margin: 8px 0; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; background: var(--input-bg); color: var(--text); }
+        button { border: none; border-radius: 8px; cursor: pointer; font-weight: bold; padding: 14px; width: 100%; margin-top: 10px; font-size: 14px; color: white; text-transform: uppercase; outline: none; -webkit-tap-highlight-color: transparent; }
         .btn-blue { background: var(--primary); } .btn-purple { background: var(--purple); } .btn-green { background: var(--success); } .btn-gray { background: var(--secondary); } .btn-orange { background: var(--warning); }
         .btn-red { background: var(--danger); }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 5px; background: white; margin-bottom: 15px; }
-        th, td { border: 1px solid #dee2e6; padding: 8px 4px; text-align: left; font-size: 11px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; background: var(--table-bg); margin-bottom: 15px; }
+        th { background: var(--th-bg); color: var(--text); }
+        th, td { border: 1px solid var(--border); padding: 8px 4px; text-align: left; font-size: 11px; color: var(--text); }
         .qtd-editavel { cursor: pointer; background: var(--qtd-bg); text-align: center; font-weight: bold; color: var(--purple); font-size: 14px; min-width: 45px; }
-
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 7000; display: flex; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box; }
-        .modal-content { background: white; padding: 20px; border-radius: 15px; width: 100%; max-width: 320px; text-align: center; }
-        
+        .modal-content { background: var(--card); color: var(--text); padding: 20px; border-radius: 15px; width: 100%; max-width: 320px; text-align: center; }
         #toast { visibility: hidden; min-width: 200px; background-color: #333; color: #fff; text-align: center; border-radius: 30px; padding: 12px 24px; position: fixed; z-index: 8000; left: 50%; bottom: 50px; transform: translateX(-50%); font-size: 14px; }
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
-        
         #printTempArea { background: white; padding: 20px; width: 450px; position: absolute; left: -9999px; }
         .print-header { background: #000; color: white; padding: 8px; text-align: center; font-weight: bold; margin-top: 10px; font-size: 14px; }
-        select { padding: 5px; border-radius: 5px; border: 1px solid #ddd; width: 100%; }
-        
-        .btn-sugestao { background: #e9ecef; color: #333; border: 1px solid #ccc; border-radius: 6px; padding: 10px; margin: 0; text-align: left; font-weight: bold; font-size: 14px; text-transform: none; display: flex; justify-content: space-between; }
+        select { padding: 5px; border-radius: 5px; border: 1px solid var(--border); width: 100%; background: var(--input-bg); color: var(--text); }
+        .btn-sugestao { background: var(--th-bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin: 0; text-align: left; font-weight: bold; font-size: 14px; text-transform: none; display: flex; justify-content: space-between; }
+        #btnDarkMode { position: fixed; top: 12px; right: 12px; z-index: 9000; width: 42px; height: 42px; border-radius: 50%; padding: 0; margin: 0; font-size: 20px; background: var(--card); border: 2px solid var(--border); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body onload="carregarTudo()">
+<button id="btnDarkMode" onclick="toggleDarkMode()" title="Alternar modo escuro">🌙</button>
 
 <div id="toast">Aviso</div>
 <div id="printTempArea"></div>
@@ -108,7 +107,7 @@
 <div class="container">
     
     <div id="loginSection">
-        <h2 style="text-align: center;">Acesso v4.32</h2>
+        <h2 style="text-align: center;">Acesso v4.34</h2>
         <input type="text" id="usuario" class="input-single" placeholder="Usuário">
         <div class="input-row">
             <input type="password" id="senha" placeholder="Senha">
@@ -233,11 +232,22 @@
         <button type="button" id="btnPrintMain" class="btn-blue" style="background:#17a2b8" onclick="gerarRelatorio()">📸 GERAR PRINT</button>
         <button type="button" class="btn-green" style="background:#25d366;" onclick="enviarWhatsAppCustom()">📲 ENVIAR WHATSAPP</button>
         <button type="button" id="btnZerar" class="btn-orange hidden" onclick="tentarZerar()">🔄 ZERAR SETOR</button>
+        <button type="button" id="btnHistorico" class="btn-gray hidden" style="background:#495057;" onclick="abrirHistorico()">📋 HISTÓRICO</button>
+        <button type="button" class="btn-gray" style="background:#dc3545;" onclick="exportarPDF()">📄 EXPORTAR PDF</button>
         <button type="button" class="btn-gray" onclick="voltar()">VOLTAR AO MENU</button>
     </div>
 </div>
 
-<div class="version-footer">v4.32 - Usando Kodular WebString Flexível</div>
+<div id="modalHistorico" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width:420px; max-height:80vh; overflow-y:auto;">
+        <h3 style="margin:0 0 15px 0; color:var(--purple);">📋 Histórico</h3>
+        <input type="text" id="buscaHistorico" class="input-single" placeholder="🔍 Buscar por item ou usuário..." oninput="filtrarHistorico()" style="margin-bottom:10px;">
+        <div id="listaHistorico"></div>
+        <button type="button" class="btn-gray" onclick="fecharModal('modalHistorico')">FECHAR</button>
+    </div>
+</div>
+
+<div class="version-footer">v4.34 - Modo Escuro, PDF, Histórico e Melhorias</div>
 
 <script>
     const firebaseConfig = {
@@ -254,7 +264,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const CHAVE = "APP_GAB_V432"; 
-    const SUPREMO_U = "37096901"; const SUPREMO_P = "9996057";
+    let SUPREMO_U = ""; let SUPREMO_P = "";
     
     // Webhook Discord
     const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1498267307510726766/n-o6e31-vKzTRBi4-UbaNLuCcjmJCB3c2cXwSUGr4oPgzTBWbZGF00piMQNzXaHGEVXA";
@@ -277,6 +287,17 @@
     function abrirModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function fecharModal(id) { document.getElementById(id).classList.add('hidden'); }
 
+    function toggleDarkMode() {
+        const isDark = document.body.classList.toggle('dark');
+        document.getElementById('btnDarkMode').innerText = isDark ? '☀️' : '🌙';
+        localStorage.setItem(CHAVE + '_DARK', isDark ? '1' : '0');
+    }
+
+    function aplicarTemaInicial() {
+        const dark = localStorage.getItem(CHAVE + '_DARK');
+        if(dark === '1') { document.body.classList.add('dark'); document.getElementById('btnDarkMode').innerText = '☀️'; }
+    }
+
     function mostrarToast(m) { 
         const t = document.getElementById("toast"); 
         t.className = ""; 
@@ -298,7 +319,16 @@
         });
     }
 
-    function carregarTudo() { 
+    function carregarTudo() {
+        aplicarTemaInicial();
+        // Carrega credenciais do Supremo do Firebase (nunca ficam expostas no código)
+        db.ref('supremo').once('value', (s) => {
+            if(s.exists()) {
+                SUPREMO_U = s.val().user || "";
+                SUPREMO_P = s.val().pass || "";
+            }
+        });
+
         db.ref('membros').on('value', (s) => { 
             membros = s.val() || []; 
             if(!document.getElementById('membrosSection').classList.contains('hidden')) renderMembros(); 
@@ -576,6 +606,8 @@
 
     function acessar() {
         const u = document.getElementById('usuario').value.trim(), s = document.getElementById('senha').value.trim();
+        if(!u || !s) return mostrarToast("Preencha usuário e senha!");
+        if(!SUPREMO_U) return mostrarToast("Aguarde, carregando...");
         if(u === SUPREMO_U && s === SUPREMO_P) { 
             cargoUsuario = "Supervisor"; 
             document.getElementById('btnMembros').classList.remove('hidden'); 
@@ -630,8 +662,17 @@
     function renderMenu() {
         const container = document.getElementById('botoesSetores');
         container.innerHTML = '';
+        const coresFixas = {
+            'Inventário': '#17a2b8',
+            'Triados': '#28a745',
+            'Pregação': '#6f42c1',
+            'Não Triado': '#fd7e14'
+        };
+        const coresExtras = ['#e83e8c', '#20c997', '#d63384', '#0dcaf0', '#6610f2', '#dc3545'];
+        let idxExtra = 0;
         setores.forEach(s => {
-            container.innerHTML += `<button type="button" class="btn-blue" onclick="abrirSetor('${s}')">${s}</button>`;
+            const cor = coresFixas[s] || coresExtras[idxExtra++ % coresExtras.length];
+            container.innerHTML += `<button type="button" style="background:${cor}; border:none; border-radius:8px; cursor:pointer; font-weight:bold; padding:14px; font-size:14px; color:white; text-transform:uppercase; outline:none; -webkit-tap-highlight-color:transparent;" onclick="abrirSetor('${s}')">${s}</button>`;
         });
     }
 
@@ -643,6 +684,7 @@
         document.getElementById('areaCadastro').classList.toggle('hidden', ehAuxiliar);
         document.getElementById('btnSalvar').classList.toggle('hidden', ehAuxiliar);
         document.getElementById('btnZerar').classList.toggle('hidden', !ehSupervisor);
+        document.getElementById('btnHistorico').classList.toggle('hidden', !ehSupervisor);
         
         const btnPrint = document.getElementById('btnPrintMain');
         const setoresUnificados = ['Triados', 'Não Triado', 'Pregação'];
@@ -671,9 +713,11 @@
         if(cargoUsuario !== "Auxiliar") html += `<th>X</th>`;
         html += `</tr></thead><tbody>`;
         (memoria[window.setorAtivo] || []).forEach((o, i) => {
+            const qtd = parseInt(o.qtd) || 0;
+            const status = qtd > 0 ? '🟢' : '🔴';
             html += `<tr><td>${o.cod}</td><td>${o.item}</td>`;
-            if(cargoUsuario !== "Auxiliar") html += `<td class="qtd-editavel" onclick="prepararCalc(${i})">${o.qtd}</td>`;
-            else html += `<td>${o.qtd}</td>`;
+            if(cargoUsuario !== "Auxiliar") html += `<td class="qtd-editavel" onclick="prepararCalc(${i})">${status} ${o.qtd}</td>`;
+            else html += `<td>${status} ${o.qtd}</td>`;
             html += `<td>${o.preco}</td>`;
             if(cargoUsuario !== "Auxiliar") html += `<td style="text-align:center"><button type="button" style="background:red; padding:4px 8px; width:auto; margin:0; border:none; border-radius:8px; color:white;" onclick="confirmarRemover(${i})">❌</button></td>`;
             html += `</tr>`;
@@ -700,12 +744,118 @@
         document.getElementById('calcInput').value = ""; abrirModal('modalCalc'); 
     }
 
+    function exportarPDF() {
+        const { jsPDF } = window.jspdf;
+        const setoresUnificados = ['Triados', 'Não Triado', 'Pregação'];
+        const setoresPDF = setoresUnificados.includes(window.setorAtivo) ? setoresUnificados : [window.setorAtivo];
+
+        const doc = new jsPDF();
+        const agora = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+        let y = 15;
+        let temDados = false;
+
+        // Cabeçalho
+        doc.setFontSize(16);
+        doc.setTextColor(111, 66, 193);
+        doc.text('RELATÓRIO DE ESTOQUE', 105, y, { align: 'center' });
+        y += 8;
+        doc.setFontSize(9);
+        doc.setTextColor(150);
+        doc.text('Gerado em: ' + agora, 105, y, { align: 'center' });
+        y += 10;
+
+        setoresPDF.forEach(s => {
+            const itens = (memoria[s] || []).filter(x => parseInt(x.qtd) > 0);
+            if(itens.length === 0) return;
+            temDados = true;
+
+            doc.setFontSize(12);
+            doc.setTextColor(50, 50, 50);
+            doc.text(s.toUpperCase(), 14, y);
+            y += 2;
+
+            doc.autoTable({
+                startY: y,
+                head: [['Código', 'Produto', 'Qtd', 'Preço']],
+                body: itens.map(i => [i.cod, i.item, i.qtd, i.preco]),
+                styles: { fontSize: 9, cellPadding: 3 },
+                headStyles: { fillColor: [111, 66, 193], textColor: 255 },
+                alternateRowStyles: { fillColor: [245, 245, 255] },
+                margin: { left: 14, right: 14 },
+            });
+
+            y = doc.lastAutoTable.finalY + 10;
+        });
+
+        if(!temDados) return mostrarToast("Nenhum item com quantidade para exportar!");
+
+        const nomeArquivo = `estoque_${window.setorAtivo.replace(/ /g,'_')}_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.pdf`;
+        doc.save(nomeArquivo);
+        mostrarToast("✅ PDF gerado!");
+    }
+        const agora = new Date();
+        const data = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+        const registro = {
+            usuario: usuarioAtivoNode,
+            setor: window.setorAtivo,
+            item: item,
+            de: qtdAntes,
+            para: qtdDepois,
+            data: data
+        };
+        db.ref('historico').push(registro);
+    }
+
+    let todosRegistrosHistorico = [];
+
+    function abrirHistorico() {
+        abrirModal('modalHistorico');
+        document.getElementById('buscaHistorico').value = '';
+        const lista = document.getElementById('listaHistorico');
+        lista.innerHTML = '<p style="color:#999; font-size:13px;">Carregando...</p>';
+        db.ref('historico').orderByKey().limitToLast(100).once('value', (s) => {
+            const data = s.val();
+            if(!data) { lista.innerHTML = '<p style="color:#999; font-size:13px;">Nenhum registro ainda.</p>'; return; }
+            todosRegistrosHistorico = Object.values(data).reverse();
+            renderHistorico(todosRegistrosHistorico);
+        });
+    }
+
+    function filtrarHistorico() {
+        const termo = document.getElementById('buscaHistorico').value.toLowerCase().trim();
+        if(!termo) { renderHistorico(todosRegistrosHistorico); return; }
+        const filtrados = todosRegistrosHistorico.filter(r =>
+            (r.item || "").toLowerCase().includes(termo) ||
+            (r.usuario || "").toLowerCase().includes(termo) ||
+            (r.setor || "").toLowerCase().includes(termo)
+        );
+        renderHistorico(filtrados);
+    }
+
+    function renderHistorico(registros) {
+        const lista = document.getElementById('listaHistorico');
+        if(registros.length === 0) { lista.innerHTML = '<p style="color:#999; font-size:13px;">Nenhum resultado.</p>'; return; }
+        lista.innerHTML = registros.map(r => `
+            <div style="border-left:3px solid var(--purple); padding:8px 10px; margin-bottom:10px; background:#f8f9fa; border-radius:0 8px 8px 0; text-align:left;">
+                <div style="font-size:12px; font-weight:bold; color:var(--purple);">${r.item}</div>
+                <div style="font-size:11px; color:#555;">Setor: ${r.setor}</div>
+                <div style="font-size:12px; margin:4px 0;">
+                    <span style="color:var(--danger);">${r.de}</span> → <span style="color:var(--success);">${r.para}</span>
+                </div>
+                <div style="font-size:10px; color:#999;">👤 ${r.usuario} • ${r.data}</div>
+            </div>
+        `).join('');
+    }
+
     function operacaoCalc(op) {
         const valTxt = document.getElementById('calcInput').value.trim();
         if(valTxt === "") return mostrarToast("Digite valor!");
         let val = parseInt(valTxt) || 0, atual = parseInt(memoria[window.setorAtivo][itemEditandoIndex].qtd) || 0;
+        const antes = atual;
         if(op==='+') atual += val; else if(op==='-') atual -= val; else if(op==='*') atual *= val; else if(op==='/') atual = val!==0?Math.round(atual/val):0;
-        memoria[window.setorAtivo][itemEditandoIndex].qtd = atual; saveD();
+        memoria[window.setorAtivo][itemEditandoIndex].qtd = atual;
+        registrarHistorico(memoria[window.setorAtivo][itemEditandoIndex].item, antes, atual);
+        saveD();
         document.getElementById('calcSubtitulo').innerText = "Qtd atual: " + atual;
         document.getElementById('calcInput').value = "";
     }
@@ -713,13 +863,18 @@
     function executarCalc() {
         const valTxt = document.getElementById('calcInput').value.trim();
         if(valTxt === "") return mostrarToast("Digite valor!");
-        memoria[window.setorAtivo][itemEditandoIndex].qtd = parseInt(valTxt) || 0; 
+        const antes = parseInt(memoria[window.setorAtivo][itemEditandoIndex].qtd) || 0;
+        const depois = parseInt(valTxt) || 0;
+        memoria[window.setorAtivo][itemEditandoIndex].qtd = depois;
+        registrarHistorico(memoria[window.setorAtivo][itemEditandoIndex].item, antes, depois);
         saveD(); fecharModal('modalCalc');
     }
 
     function reverterCalc() {
         if(itemEditandoIndex === null) return;
+        const antes = parseInt(memoria[window.setorAtivo][itemEditandoIndex].qtd) || 0;
         memoria[window.setorAtivo][itemEditandoIndex].qtd = qtdOriginalItem;
+        registrarHistorico(memoria[window.setorAtivo][itemEditandoIndex].item, antes, qtdOriginalItem);
         saveD(); 
         document.getElementById('calcSubtitulo').innerText = "Qtd atual: " + qtdOriginalItem;
         document.getElementById('calcInput').value = "";
@@ -754,8 +909,18 @@
     }
 
     function tirarFotoIndividual() {
+        // Esconde botões de excluir e coluna X antes do print
+        const botoes = document.querySelectorAll('#areaCaptureIndividual button');
+        const colunasX = document.querySelectorAll('#areaCaptureIndividual th:last-child, #areaCaptureIndividual td:last-child');
+        botoes.forEach(b => b.style.visibility = 'hidden');
+        colunasX.forEach(c => c.style.visibility = 'hidden');
+
         html2canvas(document.getElementById('areaCaptureIndividual'), { backgroundColor: "#ffffff", scale: 2 }).then(canvas => {
-            document.getElementById('resultImage').src = canvas.toDataURL(); abrirModal('photoOverlay');
+            // Restaura depois do print
+            botoes.forEach(b => b.style.visibility = '');
+            colunasX.forEach(c => c.style.visibility = '');
+            document.getElementById('resultImage').src = canvas.toDataURL();
+            abrirModal('photoOverlay');
         });
     }
 
@@ -907,6 +1072,23 @@
         db.ref('membros').set(membros).then(() => { alternarLoginRegistro(false); mostrarToast("Solicitado!"); });
     }
 
+    function confirmarRemoverMembro(idx) {
+        abrirModal('modalConfirm');
+        document.getElementById('confirmBtnYes').onclick = function() {
+            membros.splice(idx, 1);
+            db.ref('membros').set(membros).then(() => {
+                fecharModal('modalConfirm');
+                mostrarToast("✅ Membro removido!");
+            });
+        };
+    }
+        const input = document.getElementById('senhaInput_' + idx);
+        const novaSenha = input.value.trim();
+        if(!novaSenha) return mostrarToast("Digite a nova senha!");
+        membros[idx].pass = novaSenha;
+        db.ref('membros').set(membros).then(() => mostrarToast("✅ Senha alterada!"));
+    }
+
     function renderMembros() { 
         const c = document.getElementById('corpoMembros'); c.innerHTML = "";
         const peso = { "Supervisor": 3, "Colaborador": 2, "Auxiliar": 1 };
@@ -914,9 +1096,15 @@
         listaOrdenada.forEach((m, i) => {
             const realIdx = membros.findIndex(x => x.user === m.user);
             const statusBtn = m.aprovado ? 
-                `<button type="button" class="btn-red" style="padding:4px; width:auto; margin:0; border:none; border-radius:8px; color:white;" onclick="membros.splice(${realIdx},1); db.ref('membros').set(membros);">REMOVER</button>` : 
+                `<button type="button" class="btn-red" style="padding:4px; width:auto; margin:0; border:none; border-radius:8px; color:white;" onclick="confirmarRemoverMembro(${realIdx})">REMOVER</button>` : 
                 `<button type="button" class="btn-green" style="padding:4px; width:auto; margin:0; border:none; border-radius:8px; color:white;" onclick="membros[${realIdx}].aprovado=true; db.ref('membros').set(membros);">APROVAR</button>`;
-            c.innerHTML += `<tr><td>${m.user}</td><td>${m.pass}</td><td>
+            c.innerHTML += `<tr><td>${m.user}</td>
+            <td>
+                <div style="display:flex; gap:4px; align-items:center;">
+                    <input id="senhaInput_${realIdx}" type="text" value="${m.pass}" style="width:70px; padding:3px; font-size:11px; border:1px solid #ddd; border-radius:4px;">
+                    <button type="button" onclick="alterarSenha(${realIdx})" style="background:var(--purple); padding:3px 5px; width:auto; margin:0; border:none; border-radius:4px; color:white; font-size:10px;">OK</button>
+                </div>
+            </td><td>
                 <select onchange="membros[${realIdx}].cargo=this.value; db.ref('membros').set(membros);">
                     <option value="Supervisor" ${m.cargo==='Supervisor'?'selected':''}>Supervisor</option>
                     <option value="Colaborador" ${m.cargo==='Colaborador'?'selected':''}>Colaborador</option>
