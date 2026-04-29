@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v4.37</title>
+    <title>Painel - v4.38</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -247,7 +247,7 @@
     </div>
 </div>
 
-<div class="version-footer">v4.37 - Removido jsPDF, relatório HTML</div>
+<div class="version-footer">v4.38 - Removido jsPDF, relatório HTML</div>
 
 <script>
     const firebaseConfig = {
@@ -612,7 +612,22 @@
     function acessar() {
         const u = document.getElementById('usuario').value.trim(), s = document.getElementById('senha').value.trim();
         if(!u || !s) return mostrarToast("Preencha usuário e senha!");
-        if(!SUPREMO_U) return mostrarToast("Aguarde, carregando...");
+        
+        if(!SUPREMO_U) {
+            mostrarToast("⏳ Conectando...");
+            db.ref('supremo').once('value', (snap) => {
+                if(snap.exists()) {
+                    SUPREMO_U = snap.val().user || "";
+                    SUPREMO_P = snap.val().pass || "";
+                }
+                tentarLogin(u, s);
+            });
+            return;
+        }
+        tentarLogin(u, s);
+    }
+
+    function tentarLogin(u, s) {
         if(u === SUPREMO_U && s === SUPREMO_P) { 
             cargoUsuario = "Supervisor"; 
             document.getElementById('btnMembros').classList.remove('hidden'); 
