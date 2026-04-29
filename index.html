@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v4.38</title>
+    <title>Painel - v4.39</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -247,7 +247,7 @@
     </div>
 </div>
 
-<div class="version-footer">v4.38 - Removido jsPDF, relatório HTML</div>
+<div class="version-footer">v4.39 - Removido jsPDF, relatório HTML</div>
 
 <script>
     const firebaseConfig = {
@@ -329,8 +329,8 @@
         // Carrega credenciais do Supremo do Firebase (nunca ficam expostas no código)
         db.ref('supremo').once('value', (s) => {
             if(s.exists()) {
-                SUPREMO_U = s.val().user || "";
-                SUPREMO_P = s.val().pass || "";
+                SUPREMO_U = String(s.val().user || "");
+                SUPREMO_P = String(s.val().pass || "");
             }
         });
 
@@ -617,8 +617,8 @@
             mostrarToast("⏳ Conectando...");
             db.ref('supremo').once('value', (snap) => {
                 if(snap.exists()) {
-                    SUPREMO_U = snap.val().user || "";
-                    SUPREMO_P = snap.val().pass || "";
+                    SUPREMO_U = String(snap.val().user || "");
+                    SUPREMO_P = String(snap.val().pass || "");
                 }
                 tentarLogin(u, s);
             });
