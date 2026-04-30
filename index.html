@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v4.60</title>
+    <title>Painel - v4.54</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --qtd-bg: #fff9e6; --primary: #007bff; --secondary: #6c757d; --success: #28a745; --warning: #ff9800; --danger: #dc3545; --purple: #6f42c1; --border: #ddd; --input-bg: #fff; --table-bg: #fff; --th-bg: #f8f9fa; }
         body.dark { --bg: #0f0f0f; --card: #1e1e1e; --text: #e0e0e0; --qtd-bg: #2a2a1a; --border: #444; --input-bg: #2a2a2a; --table-bg: #1e1e1e; --th-bg: #2a2a2a; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100dvh; box-sizing: border-box; transition: background 0.3s, color 0.3s; }
-        body.login-mode { justify-content: center; }
-        body.login-mode .version-footer { position: fixed; bottom: 10px; left: 0; width: 100%; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; box-sizing: border-box; transition: background 0.3s, color 0.3s; }
         .container { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); width: 100%; max-width: 650px; box-sizing: border-box; transition: background 0.3s; }
         .hidden { display: none !important; }
         .version-footer { font-size: 10px; color: #bbb; text-align: center; margin-top: 20px; width: 100%; }
@@ -37,7 +35,7 @@
         #btnDarkMode { position: fixed; top: 12px; right: 12px; z-index: 9000; width: 42px; height: 42px; border-radius: 50%; padding: 0; margin: 0; font-size: 20px; background: var(--card); border: 2px solid var(--border); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
     </style>
 </head>
-<body onload="carregarTudo(); document.body.classList.add('login-mode')">
+<body onload="carregarTudo()">
 <button id="btnDarkMode" onclick="toggleDarkMode()" title="Alternar modo escuro">🌙</button>
 
 <div id="toast">Aviso</div>
@@ -218,7 +216,7 @@
     </div>
 </div>
 
-<div class="version-footer">v4.60 - Painel de Inventário</div>
+<div class="version-footer">v4.54 - Painel de Inventário</div>
 
 <script>
     const firebaseConfig = {
@@ -379,10 +377,8 @@
             memoria = s.exists() ? s.val() : {};
             if(!document.getElementById('planilhaSection').classList.contains('hidden')) render();
         });
-        document.body.classList.remove('login-mode');
         document.getElementById('loginSection').classList.add('hidden');
         document.getElementById('menuSection').classList.remove('hidden');
-        resetarInatividade();
         setTimeout(() => renderMenu(), 300);
     }
 
@@ -460,7 +456,7 @@
         let val = parseInt(valTxt) || 0, atual = parseInt(memoria[window.setorAtivo][itemEditandoIndex].qtd) || 0;
         if(op==='+') atual += val; else if(op==='-') atual -= val; else if(op==='*') atual *= val; else if(op==='/') atual = val!==0?Math.round(atual/val):0;
         memoria[window.setorAtivo][itemEditandoIndex].qtd = atual;
-        db.ref('memoria/' + usuarioAtivoNode).set(memoria);
+        saveD();
         document.getElementById('calcSubtitulo').innerText = "Qtd atual: " + atual;
         document.getElementById('calcInput').value = "";
     }
@@ -469,14 +465,13 @@
         const valTxt = document.getElementById('calcInput').value.trim();
         if(valTxt === "") return mostrarToast("Digite valor!");
         memoria[window.setorAtivo][itemEditandoIndex].qtd = parseInt(valTxt) || 0;
-        db.ref('memoria/' + usuarioAtivoNode).set(memoria).then(() => render());
-        fecharModal('modalCalc');
+        saveD(); fecharModal('modalCalc');
     }
 
     function reverterCalc() {
         if(itemEditandoIndex === null) return;
         memoria[window.setorAtivo][itemEditandoIndex].qtd = qtdOriginalItem;
-        db.ref('memoria/' + usuarioAtivoNode).set(memoria);
+        saveD();
         document.getElementById('calcSubtitulo').innerText = "Qtd atual: " + qtdOriginalItem;
         document.getElementById('calcInput').value = "";
         mostrarToast("↩ Valor revertido!");
@@ -581,15 +576,12 @@
     }
 
     function logout() {
-        clearTimeout(inactivityTimer);
         if(usuarioAtivoNode) { db.ref('setores/' + usuarioAtivoNode).off(); db.ref('memoria/' + usuarioAtivoNode).off(); }
         usuarioAtivoNode = ""; memoria = {}; setores = []; ehSupremo = false;
         const l = Storage.get(CHAVE + '_LOG');
         if(l) { const o = JSON.parse(l); document.getElementById('usuario').value = o.u; document.getElementById('senha').value = o.s; document.getElementById('lembrar').checked = true; }
         else { document.getElementById('usuario').value = ''; document.getElementById('senha').value = ''; document.getElementById('lembrar').checked = false; }
-        document.getElementById('menuSection').classList.add('hidden');
-        document.getElementById('loginSection').classList.remove('hidden');
-        document.body.classList.add('login-mode');
+        document.getElementById('menuSection').classList.add('hidden'); document.getElementById('loginSection').classList.remove('hidden');
     }
 
     function fecharFoto() { fecharModal('photoOverlay'); }
@@ -731,25 +723,9 @@
         });
     }
 
-    let inactivityTimer;
-
-    function resetarInatividade() {
-        clearTimeout(inactivityTimer);
-        if(usuarioAtivoNode) {
-            inactivityTimer = setTimeout(() => {
-                logout();
-                mostrarToast("⏱️ Sessão encerrada por inatividade!");
-            }, 30000);
-        }
-    }
-
-    document.addEventListener('touchstart', resetarInatividade);
-    document.addEventListener('click', resetarInatividade);
-    document.addEventListener('keydown', resetarInatividade);
-
     function alternarLoginRegistro(r) { document.getElementById('loginSection').classList.toggle('hidden', r); document.getElementById('registroSection').classList.toggle('hidden', !r); }
     function abrirMembros() { if(cargoUsuario === "Supervisor") { document.getElementById('menuSection').classList.add('hidden'); document.getElementById('membrosSection').classList.remove('hidden'); renderMembros(); } }
     function voltarAoMenu() { document.getElementById('membrosSection').classList.add('hidden'); document.getElementById('menuSection').classList.remove('hidden'); }
 </script>
 </body>
-</html>
+                                                                                      </html>
