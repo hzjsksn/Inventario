@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v5.35</title>
+    <title>Painel - v5.37</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -167,7 +167,7 @@
         <button type="button" class="btn-gray" onclick="voltar()">VOLTAR AO MENU</button>
     </div>
 </div>
-<div class="version-footer">v5.35 - Painel de Inventário</div>
+<div class="version-footer">v5.37 - Painel de Inventário</div>
 <script>
     const firebaseConfig = { apiKey: "AIzaSyA-E1mcTPCFoWQlj8wARDWvE-nJ3JeXJXM", authDomain: "plhanilha-2e0c3.firebaseapp.com", databaseURL: "https://plhanilha-2e0c3-default-rtdb.firebaseio.com", projectId: "plhanilha-2e0c3", storageBucket: "plhanilha-2e0c3.firebasestorage.app", messagingSenderId: "423764140356", appId: "1:423764140356:web:8ac99085cfff4612acb711", measurementId: "G-RGZ409J25V" };
     firebase.initializeApp(firebaseConfig);
@@ -296,8 +296,7 @@
         const agora = new Date();
         const dataStr = agora.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
         const horaStr = agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-        const chave = dataStr.replace(/\//g, '-') + '_' + horaStr.replace(':', '-');
-        // Salva snapshot no Firebase
+        const chave = dataStr.replace(/\//g, '-');
         const snapshot = {};
         setores.forEach(s => {
             const itens = memoria[s] || [];
@@ -307,11 +306,11 @@
         db.ref('historico_planilhas/' + usuarioAtivoNode + '/' + chave).set({
             data: dataStr, hora: horaStr, planilhas: snapshot
         }).then(() => {
-            // Zera todas as quantidades
             setores.forEach(s => { if(memoria[s]) memoria[s].forEach(item => item.qtd = 0); });
             db.ref('memoria/' + usuarioAtivoNode).set(memoria).then(() => {
                 if(!document.getElementById('planilhaSection').classList.contains('hidden')) render();
                 mostrarToast("📋 Histórico salvo e planilhas zeradas!");
+            });
             });
         });
     }
@@ -346,16 +345,18 @@
                 const totalItens = Object.values(reg.planilhas || {}).reduce((acc, itens) => acc + itens.length, 0);
                 const totalQtd = Object.values(reg.planilhas || {}).reduce((acc, itens) => acc + itens.reduce((a, i) => a + (parseInt(i.qtd)||0), 0), 0);
                 const btn = document.createElement('div');
-                btn.style.cssText = 'background:var(--card); border:1px solid var(--border); border-radius:10px; padding:15px; cursor:pointer;';
+                btn.style.cssText = 'background:var(--card); border:1px solid var(--border); border-radius:10px; padding:15px;';
                 btn.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
+                        <div style="cursor:pointer; flex:1;" onclick="abrirDetalheHistorico('${chave}', ${JSON.stringify(reg).replace(/'/g, "\\'")})">
                             <div style="font-weight:bold; font-size:14px; color:var(--purple);">📅 ${reg.data}</div>
                             <div style="font-size:12px; color:#888; margin-top:3px;">⏰ ${reg.hora} — ${totalItens} itens, ${totalQtd} unidades</div>
                         </div>
-                        <div style="font-size:20px;">›</div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="font-size:20px; cursor:pointer;" onclick="abrirDetalheHistorico('${chave}', ${JSON.stringify(reg).replace(/'/g, "\\'")})">›</div>
+                            <button type="button" onclick="excluirHistorico('${chave}')" style="background:var(--danger); border:none; border-radius:6px; color:white; padding:6px 10px; font-size:12px; font-weight:bold; cursor:pointer;">🗑️</button>
+                        </div>
                     </div>`;
-                btn.onclick = () => abrirDetalheHistorico(chave, reg);
                 lista.appendChild(btn);
             });
         });
@@ -421,6 +422,13 @@
                 abrirModal('photoOverlay');
             });
         }, 200);
+    }
+    function excluirHistorico(chave) {
+        if(!confirm('Apagar este registro do histórico?')) return;
+        db.ref('historico_planilhas/' + usuarioAtivoNode + '/' + chave).remove().then(() => {
+            mostrarToast("✅ Registro apagado!");
+            abrirHistorico();
+        });
     }
     function voltarParaHistorico() { abrirHistorico(); }
 
