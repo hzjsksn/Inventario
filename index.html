@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v5.37</title>
+    <title>Painel - v5.39</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -36,7 +36,7 @@
         .print-header { background: #000; color: white; padding: 8px; text-align: center; font-weight: bold; margin-top: 10px; font-size: 14px; }
         select { padding: 5px; border-radius: 5px; border: 1px solid var(--border); width: 100%; background: var(--input-bg); color: var(--text); }
         .btn-sugestao { background: var(--th-bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin: 0; text-align: left; font-weight: bold; font-size: 14px; text-transform: none; display: flex; justify-content: space-between; }
-        #btnDarkMode { position: fixed; top: 12px; right: 12px; z-index: 9000; width: 42px; height: 42px; border-radius: 50%; padding: 0; margin: 0; font-size: 20px; background: var(--card); border: 2px solid var(--border); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        #btnDarkMode { position: fixed; top: 12px; right: 12px; z-index: 99999; width: 42px; height: 42px; border-radius: 50%; padding: 0; margin: 0; font-size: 20px; background: var(--card); border: 2px solid var(--border); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer; pointer-events: all; }
     </style>
 </head>
 <body onload="carregarTudo(); document.body.classList.add('login-mode')">
@@ -167,7 +167,7 @@
         <button type="button" class="btn-gray" onclick="voltar()">VOLTAR AO MENU</button>
     </div>
 </div>
-<div class="version-footer">v5.37 - Painel de Inventário</div>
+<div class="version-footer">v5.39 - Painel de Inventário</div>
 <script>
     const firebaseConfig = { apiKey: "AIzaSyA-E1mcTPCFoWQlj8wARDWvE-nJ3JeXJXM", authDomain: "plhanilha-2e0c3.firebaseapp.com", databaseURL: "https://plhanilha-2e0c3-default-rtdb.firebaseio.com", projectId: "plhanilha-2e0c3", storageBucket: "plhanilha-2e0c3.firebasestorage.app", messagingSenderId: "423764140356", appId: "1:423764140356:web:8ac99085cfff4612acb711", measurementId: "G-RGZ409J25V" };
     firebase.initializeApp(firebaseConfig);
@@ -424,11 +424,14 @@
         }, 200);
     }
     function excluirHistorico(chave) {
-        if(!confirm('Apagar este registro do histórico?')) return;
-        db.ref('historico_planilhas/' + usuarioAtivoNode + '/' + chave).remove().then(() => {
-            mostrarToast("✅ Registro apagado!");
-            abrirHistorico();
-        });
+        abrirModal('modalConfirm');
+        document.getElementById('confirmBtnYes').onclick = function() {
+            db.ref('historico_planilhas/' + usuarioAtivoNode + '/' + chave).remove().then(() => {
+                fecharModal('modalConfirm');
+                mostrarToast("✅ Registro apagado!");
+                abrirHistorico();
+            });
+        };
     }
     function voltarParaHistorico() { abrirHistorico(); }
 
