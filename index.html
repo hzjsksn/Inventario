@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v5.26</title>
+    <title>Painel - v5.35</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -44,6 +44,7 @@
 <div id="toast">Aviso</div>
 <div id="printTempArea"></div>
 <div id="offlineScreen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); z-index:99999; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px; box-sizing:border-box;"><div style="font-size:60px; margin-bottom:20px;">📡</div><h2 style="color:var(--text); margin:0 0 10px 0;">Sem Conexão</h2><p style="color:var(--text); opacity:0.7; margin:0 0 30px 0;">Verifique sua conexão com a internet e tente novamente.</p><button type="button" class="btn-blue" style="width:200px;" onclick="tentarReconectar()">🔄 TENTAR NOVAMENTE</button></div>
+<div id="modalFinalizarDia" class="modal-overlay hidden"><div class="modal-content"><h3 style="margin:0; color:var(--danger);">Finalizar Dia?</h3><p style="font-size:13px; color:#888; margin:10px 0;">Isso vai salvar o histórico e atualizar o gráfico do dia.</p><button type="button" class="btn-red" onclick="confirmarFinalizarDia()">✅ CONFIRMAR</button><button type="button" class="btn-gray" onclick="fecharModal('modalFinalizarDia')">CANCELAR</button></div></div>
 <div id="modalConfirm" class="modal-overlay hidden"><div class="modal-content"><h3 style="margin:0; color:var(--danger);">Excluir Item?</h3><button type="button" class="btn-red" id="confirmBtnYes">EXCLUIR</button><button type="button" class="btn-gray" onclick="fecharModal('modalConfirm')">CANCELAR</button></div></div>
 <div id="modalConfirmBase" class="modal-overlay hidden"><div class="modal-content"><h3 style="margin:0; color:var(--danger);">Excluir da Base?</h3><button type="button" class="btn-red" id="confirmBaseBtnYes">EXCLUIR</button><button type="button" class="btn-gray" onclick="fecharModal('modalConfirmBase')">CANCELAR</button></div></div>
 <div id="modalConfirmSetor" class="modal-overlay hidden"><div class="modal-content"><h3 style="margin:0; color:var(--danger);">Excluir Planilha?</h3><p style="font-size:14px; color:#555; margin: 15px 0;">Todos os itens desta planilha serão apagados. Deseja continuar?</p><button type="button" class="btn-red" id="confirmSetorBtnYes">SIM, EXCLUIR</button><button type="button" class="btn-gray" onclick="fecharModal('modalConfirmSetor')">CANCELAR</button></div></div>
@@ -73,6 +74,7 @@
         <button type="button" class="btn-purple" style="margin-bottom: 15px; background:#5a3e8a;" onclick="abrirHistorico()">📋 Histórico de Planilhas</button>
         <div id="botoesSetores" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;"></div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button type="button" id="btnFinalizarDia" class="btn-red hidden" style="margin-top:0; background:#c0392b;" onclick="finalizarDia()">🔚 FINALIZAR DIA</button>
             <button type="button" id="btnGerenciamento" class="btn-gray hidden" style="margin-top:0; background:#343a40;" onclick="toggleGerenciamento()">⚙️ GERENCIAMENTO DO APP ▼</button>
             <div id="painelGerenciamento" style="display:none; flex-direction:column; gap:8px; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 8px;">
                 <button type="button" id="btnBaseProdutos" class="btn-blue hidden" style="margin-top:0; background:#17a2b8;" onclick="abrirBaseProdutos()">Base Mestra (Supremo)</button>
@@ -105,6 +107,7 @@
     <div id="historicoDetalheSection" class="hidden">
         <h2 id="historicoDetalheData" style="text-align:center; font-size:16px; color:var(--purple);"></h2>
         <div id="historicoDetalheConteudo" style="margin-bottom:15px;"></div>
+        <button type="button" class="btn-blue" style="background:#17a2b8; margin-bottom:10px;" onclick="printHistorico()">📸 PRINT DO HISTÓRICO</button>
         <button type="button" class="btn-gray" onclick="voltarParaHistorico()">VOLTAR AO HISTÓRICO</button>
     </div>
     <div id="baseProdutosSection" class="hidden">
@@ -164,7 +167,7 @@
         <button type="button" class="btn-gray" onclick="voltar()">VOLTAR AO MENU</button>
     </div>
 </div>
-<div class="version-footer">v5.26 - Painel de Inventário</div>
+<div class="version-footer">v5.35 - Painel de Inventário</div>
 <script>
     const firebaseConfig = { apiKey: "AIzaSyA-E1mcTPCFoWQlj8wARDWvE-nJ3JeXJXM", authDomain: "plhanilha-2e0c3.firebaseapp.com", databaseURL: "https://plhanilha-2e0c3-default-rtdb.firebaseio.com", projectId: "plhanilha-2e0c3", storageBucket: "plhanilha-2e0c3.firebasestorage.app", messagingSenderId: "423764140356", appId: "1:423764140356:web:8ac99085cfff4612acb711", measurementId: "G-RGZ409J25V" };
     firebase.initializeApp(firebaseConfig);
@@ -199,8 +202,8 @@
     function carregarTudo() { aplicarTemaInicial(); verificarConexao(); db.ref('supremo').once('value', (s) => { if(s.exists()) { SUPREMO_U = String(s.val().user || ""); SUPREMO_P = String(s.val().pass || ""); } }); db.ref('membros').on('value', (s) => { membros = s.val() || []; if(!document.getElementById('membrosSection').classList.contains('hidden')) renderMembros(); }); db.ref('galeria_paletes').on('value', (s) => { const data = s.val(); galeriaPaletes = data ? (Array.isArray(data) ? data : Object.values(data)).filter(p => p && p.cod) : []; if(!document.getElementById('galeriaSection').classList.contains('hidden')) filtrarGaleria(); }); db.ref('base_produtos').on('value', (s) => { const data = s.val(); baseProdutos = data ? (Array.isArray(data) ? data : Object.values(data)).filter(p => p && p.cod) : []; if(!document.getElementById('baseProdutosSection').classList.contains('hidden')) renderBaseProdutos(); }); const l = Storage.get(CHAVE + '_LOG'); if(l) { const o = JSON.parse(l); document.getElementById('usuario').value = o.u; document.getElementById('senha').value = o.s; document.getElementById('lembrar').checked = true; } }
     function toggleGerenciamento() { const painel = document.getElementById('painelGerenciamento'); const btn = document.getElementById('btnGerenciamento'); const aberto = painel.style.display === 'flex'; painel.style.display = aberto ? 'none' : 'flex'; btn.innerText = aberto ? '⚙️ GERENCIAMENTO DO APP ▼' : '⚙️ GERENCIAMENTO DO APP ▲'; }
     function acessar() { const u = document.getElementById('usuario').value.trim(), s = document.getElementById('senha').value.trim(); if(!u || !s) return mostrarToast("Preencha usuário e senha!"); if(!SUPREMO_U) { mostrarToast("⏳ Conectando..."); db.ref('supremo').once('value', (snap) => { if(snap.exists()) { SUPREMO_U = String(snap.val().user || ""); SUPREMO_P = String(snap.val().pass || ""); } tentarLogin(u, s); }); return; } tentarLogin(u, s); }
-    function tentarLogin(u, s) { if(u === SUPREMO_U && s === SUPREMO_P) { cargoUsuario = "Supervisor"; document.getElementById('btnMembros').classList.remove('hidden'); document.getElementById('btnGerenciarSetores').classList.remove('hidden'); document.getElementById('btnGerenciamento').classList.remove('hidden'); return finalizarLogin(u, s); } let m = membros.find(x => x.user === u && x.pass === s); if(!m) return mostrarToast("Usuário não encontrado!"); if(!m.aprovado) return mostrarToast("Aguarde aprovação!"); cargoUsuario = m.cargo; if(cargoUsuario === "Supervisor") { document.getElementById('btnMembros').classList.remove('hidden'); document.getElementById('btnGerenciarSetores').classList.remove('hidden'); document.getElementById('btnGerenciamento').classList.remove('hidden'); } else { document.getElementById('btnMembros').classList.add('hidden'); document.getElementById('btnGerenciarSetores').classList.add('hidden'); document.getElementById('btnGerenciamento').classList.add('hidden'); } finalizarLogin(u, s); }
-    function finalizarLogin(u, s) { if(document.getElementById('lembrar').checked) { Storage.set(CHAVE + '_LOG', JSON.stringify({u,s})); } else { Storage.remove(CHAVE + '_LOG'); } ehSupremo = (u === SUPREMO_U && s === SUPREMO_P); document.getElementById('btnBaseProdutos').classList.toggle('hidden', !ehSupremo); usuarioAtivoNode = u.replace(/[.#$[\]]/g, '_'); db.ref('setores/' + usuarioAtivoNode).on('value', (s) => { if(s.exists()) { setores = s.val(); } else { setores = ['Inventário','Triados','Pregação','Não Triado']; db.ref('setores/' + usuarioAtivoNode).set(setores); } if(!document.getElementById('menuSection').classList.contains('hidden')) renderMenu(); }); db.ref('memoria/' + usuarioAtivoNode).on('value', (s) => { memoria = s.exists() ? s.val() : {}; if(!document.getElementById('planilhaSection').classList.contains('hidden')) render(); }); document.body.classList.remove('login-mode'); esconderTudo(); document.getElementById('menuSection').classList.remove('hidden'); resetarInatividade(); agendarSalvamentoGrafico(); agendarZeragemDiaria(); setTimeout(() => renderMenu(), 300); }
+    function tentarLogin(u, s) { if(u === SUPREMO_U && s === SUPREMO_P) { cargoUsuario = "Supervisor"; document.getElementById('btnMembros').classList.remove('hidden'); document.getElementById('btnGerenciarSetores').classList.remove('hidden'); document.getElementById('btnGerenciamento').classList.remove('hidden'); document.getElementById('btnFinalizarDia').classList.remove('hidden'); return finalizarLogin(u, s); } let m = membros.find(x => x.user === u && x.pass === s); if(!m) return mostrarToast("Usuário não encontrado!"); if(!m.aprovado) return mostrarToast("Aguarde aprovação!"); cargoUsuario = m.cargo; if(cargoUsuario === "Supervisor") { document.getElementById('btnMembros').classList.remove('hidden'); document.getElementById('btnGerenciarSetores').classList.remove('hidden'); document.getElementById('btnGerenciamento').classList.remove('hidden'); document.getElementById('btnFinalizarDia').classList.remove('hidden'); } else if(cargoUsuario === "Colaborador") { document.getElementById('btnMembros').classList.add('hidden'); document.getElementById('btnGerenciarSetores').classList.add('hidden'); document.getElementById('btnGerenciamento').classList.add('hidden'); document.getElementById('btnFinalizarDia').classList.remove('hidden'); } else { document.getElementById('btnMembros').classList.add('hidden'); document.getElementById('btnGerenciarSetores').classList.add('hidden'); document.getElementById('btnGerenciamento').classList.add('hidden'); document.getElementById('btnFinalizarDia').classList.add('hidden'); } finalizarLogin(u, s); }
+    function finalizarLogin(u, s) { if(document.getElementById('lembrar').checked) { Storage.set(CHAVE + '_LOG', JSON.stringify({u,s})); } else { Storage.remove(CHAVE + '_LOG'); } ehSupremo = (u === SUPREMO_U && s === SUPREMO_P); document.getElementById('btnBaseProdutos').classList.toggle('hidden', !ehSupremo); usuarioAtivoNode = u.replace(/[.#$[\]]/g, '_'); db.ref('setores/' + usuarioAtivoNode).on('value', (s) => { if(s.exists()) { setores = s.val(); } else { setores = ['Inventário','Triados','Pregação','Não Triado']; db.ref('setores/' + usuarioAtivoNode).set(setores); } if(!document.getElementById('menuSection').classList.contains('hidden')) renderMenu(); }); db.ref('memoria/' + usuarioAtivoNode).on('value', (s) => { memoria = s.exists() ? s.val() : {}; if(!document.getElementById('planilhaSection').classList.contains('hidden')) render(); }); document.body.classList.remove('login-mode'); esconderTudo(); document.getElementById('menuSection').classList.remove('hidden'); resetarInatividade(); agendarSalvamentoGrafico(); agendarZeragemDiaria(); iniciarAutoSave(); setTimeout(() => renderMenu(), 300); }
     function renderMenu() { const container = document.getElementById('botoesSetores'); container.innerHTML = ''; const coresFixas = { 'Inventário':'#17a2b8', 'Triados':'#28a745', 'Pregação':'#6f42c1', 'Não Triado':'#fd7e14' }; const coresExtras = ['#e83e8c','#20c997','#d63384','#0dcaf0','#6610f2','#dc3545']; let idxExtra = 0; setores.forEach(s => { const cor = coresFixas[s] || coresExtras[idxExtra++ % coresExtras.length]; container.innerHTML += `<button type="button" style="background:${cor}; border:none; border-radius:8px; cursor:pointer; font-weight:bold; padding:14px; font-size:14px; color:white; text-transform:uppercase; outline:none; -webkit-tap-highlight-color:transparent;" onclick="abrirSetor('${s}')">${s}</button>`; }); }
     function abrirSetor(n) { window.setorAtivo = n; document.getElementById('labelSetor').innerText = n; const ehSupervisor = (cargoUsuario === "Supervisor"); const ehAuxiliar = (cargoUsuario === "Auxiliar"); document.getElementById('areaCadastro').classList.toggle('hidden', ehAuxiliar); document.getElementById('btnSalvar').classList.toggle('hidden', ehAuxiliar); document.getElementById('btnZerar').classList.toggle('hidden', !ehSupervisor); const btnPrint = document.getElementById('btnPrintMain'); const setoresUnificados = ['Triados','Não Triado','Pregação']; if(setoresUnificados.includes(n)) { btnPrint.innerText = "📸 PRINT RELATÓRIO GRUPO"; btnPrint.style.background = "#6f42c1"; } else { btnPrint.innerText = `📸 PRINT ${n.toUpperCase()}`; btnPrint.style.background = "#17a2b8"; } document.getElementById('sugestoesProduto').innerHTML = ''; document.getElementById('novoCod').value = ''; document.getElementById('novoItem').value = ''; document.getElementById('novoPreco').value = ''; document.getElementById('novoQtd').value = ''; esconderTudo(); document.getElementById('planilhaSection').classList.remove('hidden'); render(); }
     function render() { const container = document.getElementById('tabelasSetores'); container.innerHTML = `<div style="background:#444; color:white; padding:8px; font-weight:bold; text-align:center; border-radius:5px; margin-top:10px;">${window.setorAtivo.toUpperCase()}</div>`; let html = `<table><thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th>`; if(cargoUsuario !== "Auxiliar") html += `<th>X</th>`; html += `</tr></thead><tbody>`; (memoria[window.setorAtivo] || []).forEach((o, i) => { const prodBase = baseProdutos.find(p => p.cod === o.cod); const precoAtual = prodBase ? prodBase.preco : o.preco; if(prodBase && prodBase.preco !== o.preco) { memoria[window.setorAtivo][i].preco = prodBase.preco; } html += `<tr><td>${o.cod}</td><td>${o.item}</td>`; if(cargoUsuario !== "Auxiliar") html += `<td class="qtd-editavel" onclick="prepararCalc(${i})">${o.qtd}</td>`; else html += `<td>${o.qtd}</td>`; html += `<td>${precoAtual}</td>`; if(cargoUsuario !== "Auxiliar") html += `<td style="text-align:center"><button type="button" style="background:red; padding:4px 8px; width:auto; margin:0; border:none; border-radius:8px; color:white;" onclick="confirmarRemover(${i})">❌</button></td>`; html += `</tr>`; }); container.innerHTML += html + `</tbody></table>`; }
@@ -225,10 +228,36 @@
     function tirarFotoGrupo() { const tmp = document.getElementById('printTempArea'); tmp.innerHTML = `<h2 style="text-align:center;">ESTOQUE ATUAL</h2>`; let tem = false; ['Triados','Não Triado','Pregação'].forEach(s => { const itens = (memoria[s] || []).filter(x => parseInt(x.qtd) > 0); if(itens.length > 0) { tem = true; tmp.innerHTML += `<div class="print-header">${s.toUpperCase()}</div>`; let table = `<table><thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th></tr></thead><tbody>`; itens.forEach(i => { table += `<tr><td>${i.cod}</td><td>${i.item}</td><td style="color:#dc3545; font-weight:bold; text-align:center;">${i.qtd}</td><td style="white-space:nowrap;">${i.preco}</td></tr>`; }); tmp.innerHTML += table + `</tbody></table>`; } }); if(!tem) return mostrarToast("Vazio!"); const eraEscuro = document.body.classList.contains('dark'); if(eraEscuro) document.body.classList.remove('dark'); setTimeout(() => { html2canvas(tmp, { backgroundColor:"#ffffff", scale:2 }).then(canvas => { if(eraEscuro) document.body.classList.add('dark'); document.getElementById('resultImage').src = canvas.toDataURL(); abrirModal('photoOverlay'); tmp.innerHTML = ""; }); }, 400); }
     function exportarPDFGrafico() { mostrarToast("⏳ Gerando PDF..."); const canvas = document.getElementById('graficoCanvas'); const { jsPDF } = window.jspdf; const imgData = canvas.toDataURL('image/jpeg', 0.95); const pdfW = 842; const pdfH = 595; const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: [pdfW, pdfH] }); pdf.addImage(imgData, 'JPEG', 20, 20, pdfW - 40, pdfH - 40); const data = new Date().toLocaleDateString('pt-BR').replace(/\//g,'-'); const nomeArquivo = `grafico_estoque_${data}.pdf`; try { const base64 = pdf.output('datauristring'); if(typeof window.AppInventor !== 'undefined' && typeof window.AppInventor.setWebViewString === 'function') { window.AppInventor.setWebViewString("PDF||" + nomeArquivo + "||" + base64); mostrarToast("✅ Enviando para o app..."); } else { const blob = pdf.output('blob'); const blobUrl = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = blobUrl; a.download = nomeArquivo; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(blobUrl); }, 1000); mostrarToast("✅ PDF gerado!"); } } catch(e) { mostrarToast("❌ Erro ao gerar PDF!"); } }
     function enviarWhatsAppCustom() { let txt = "", tem = false; const setoresUnificados = ['Triados','Não Triado','Pregação']; const setoresPrint = setoresUnificados.includes(window.setorAtivo) ? setoresUnificados : [window.setorAtivo]; setoresPrint.forEach(s => { const itens = (memoria[s] || []).filter(x => parseInt(x.qtd) > 0); if(itens.length > 0) { tem = true; txt += `📍 *SETOR: ${s.toUpperCase()}*\n\n`; itens.forEach(i => { txt += `📊 Dados do Item\n━━━━━━━━━━━━━━\n🆔 Código: ${i.cod}\n📦 Produto: ${i.item}\n💰 Valor Unitário: ${i.preco}\n🔢 Quantidade em Estoque: ${i.qtd}\n━━━━━━━━━━━━━━\n\n`; }); } }); if(!tem) return mostrarToast("Nenhum item com quantidade maior que zero!"); const uri = encodeURIComponent(txt.trim()); function tentarKodular(tentativas) { if(typeof window.AppInventor !== 'undefined' && typeof window.AppInventor.setWebViewString === 'function') { window.AppInventor.setWebViewString("whatsapp://send?text=" + uri); } else if(tentativas > 0) { setTimeout(() => tentarKodular(tentativas - 1), 300); } else { window.open("https://wa.me/?text=" + uri, '_blank'); } } tentarKodular(5); }
-    function salvarAgoraManual() { mostrarToast("✅ Foi salvo!"); db.ref('memoria/' + usuarioAtivoNode).set(memoria).then(() => { render(); salvarHistoricoGrafico(); }); }
+    function salvarAgoraManual() { mostrarToast("✅ Foi salvo!"); db.ref('memoria/' + usuarioAtivoNode).set(memoria).then(() => { render(); salvarHistoricoGrafico(); salvarHistoricoDiario(); }); }
+    function salvarHistoricoDiario() {
+        if(!usuarioAtivoNode || Object.keys(memoria).length === 0) return;
+        const hoje = new Date();
+        const dataStr = hoje.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
+        const horaStr = hoje.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+        const chave = dataStr.replace(/\//g, '-');
+        const snapshot = {};
+        setores.forEach(s => {
+            const itens = memoria[s] || [];
+            if(itens.length > 0) snapshot[s] = JSON.parse(JSON.stringify(itens));
+        });
+        if(Object.keys(snapshot).length === 0) return;
+        db.ref('historico_planilhas/' + usuarioAtivoNode + '/' + chave).set({
+            data: dataStr, hora: horaStr, planilhas: snapshot
+        });
+    }
+    let autoSaveInterval = null;
+    function iniciarAutoSave() {
+        if(autoSaveInterval) clearInterval(autoSaveInterval);
+        autoSaveInterval = setInterval(() => {
+            if(usuarioAtivoNode) salvarHistoricoDiario();
+        }, 5000);
+    }
+    function pararAutoSave() {
+        if(autoSaveInterval) { clearInterval(autoSaveInterval); autoSaveInterval = null; }
+    }
     function tentarZerar() { if(!memoria[window.setorAtivo] || memoria[window.setorAtivo].length === 0) return mostrarToast("⚠️ Cadastre um item primeiro!"); abrirModal('modalZerar'); }
     function confirmarZerar() { if(cargoUsuario === "Supervisor" && memoria[window.setorAtivo]) { memoria[window.setorAtivo].forEach(i => i.qtd = 0); mostrarToast("✅ Foi zerado!"); render(); fecharModal('modalZerar'); db.ref('memoria/' + usuarioAtivoNode).set(memoria); } }
-    function logout() { clearTimeout(inactivityTimer); if(usuarioAtivoNode) { db.ref('setores/' + usuarioAtivoNode).off(); db.ref('memoria/' + usuarioAtivoNode).off(); } usuarioAtivoNode = ""; memoria = {}; setores = []; ehSupremo = false; const l = Storage.get(CHAVE + '_LOG'); if(l) { const o = JSON.parse(l); document.getElementById('usuario').value = o.u; document.getElementById('senha').value = o.s; document.getElementById('lembrar').checked = true; } else { document.getElementById('usuario').value = ''; document.getElementById('senha').value = ''; document.getElementById('lembrar').checked = false; } esconderTudo(); document.getElementById('loginSection').classList.remove('hidden'); document.body.classList.add('login-mode'); }
+    function logout() { clearTimeout(inactivityTimer); pararAutoSave(); if(usuarioAtivoNode) { db.ref('setores/' + usuarioAtivoNode).off(); db.ref('memoria/' + usuarioAtivoNode).off(); } usuarioAtivoNode = ""; memoria = {}; setores = []; ehSupremo = false; const l = Storage.get(CHAVE + '_LOG'); if(l) { const o = JSON.parse(l); document.getElementById('usuario').value = o.u; document.getElementById('senha').value = o.s; document.getElementById('lembrar').checked = true; } else { document.getElementById('usuario').value = ''; document.getElementById('senha').value = ''; document.getElementById('lembrar').checked = false; } esconderTudo(); document.getElementById('loginSection').classList.remove('hidden'); document.body.classList.add('login-mode'); }
     function fecharFoto() { fecharModal('photoOverlay'); }
     function voltar() { esconderTudo(); document.getElementById('menuSection').classList.remove('hidden'); }
     function abrirBaseProdutos() { if(!ehSupremo) return; esconderTudo(); document.getElementById('baseProdutosSection').classList.remove('hidden'); renderBaseProdutos(); }
@@ -344,17 +373,55 @@
             return;
         }
         Object.entries(planilhas).forEach(([setor, itens]) => {
+            const itensFiltrados = itens.filter(item => parseInt(item.qtd) > 0);
+            if(itensFiltrados.length === 0) return;
             let html = `<div style="background:#444; color:white; padding:8px; font-weight:bold; text-align:center; border-radius:5px; margin-top:10px;">${setor.toUpperCase()}</div>`;
             html += `<table><thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th></tr></thead><tbody>`;
-            itens.forEach(item => {
+            itensFiltrados.forEach(item => {
                 html += `<tr><td>${item.cod}</td><td>${item.item}</td><td style="text-align:center; font-weight:bold; color:var(--purple);">${item.qtd}</td><td>${item.preco}</td></tr>`;
             });
             html += `</tbody></table>`;
             conteudo.innerHTML += html;
         });
+        if(conteudo.innerHTML === '') {
+            conteudo.innerHTML = '<p style="text-align:center; color:#999;">Nenhum item com quantidade maior que zero.</p>';
+        }
     }
 
-    function voltarDoHistorico() { esconderTudo(); document.getElementById('menuSection').classList.remove('hidden'); }
+    function finalizarDia() { abrirModal('modalFinalizarDia'); }
+    function confirmarFinalizarDia() {
+        fecharModal('modalFinalizarDia');
+        mostrarToast("⏳ Finalizando dia...");
+        salvarHistoricoDiario();
+        salvarGraficoAgora2();
+        setTimeout(() => mostrarToast("✅ Dia finalizado!"), 1000);
+    }
+    function salvarGraficoAgora2() {
+        const hoje = new Date().toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
+        const chaveHoje = hoje.replace(/\//g, '-');
+        const valTriados = calcularValorSetor(['Triados']);
+        const valGrupo = calcularValorSetor(['Não Triado', 'Pregação']);
+        db.ref('historico_grafico/' + chaveHoje).set({ data: hoje, triados: valTriados, grupo: valGrupo });
+    }
+    function printHistorico() {
+        const conteudo = document.getElementById('historicoDetalheConteudo');
+        const data = document.getElementById('historicoDetalheData').innerText;
+        const eraEscuro = document.body.classList.contains('dark');
+        if(eraEscuro) document.body.classList.remove('dark');
+        const tmp = document.getElementById('printTempArea');
+        tmp.innerHTML = `<div style="font-family:sans-serif; padding:10px;">
+            <h3 style="text-align:center; margin:0 0 10px 0; font-size:14px;">${data}</h3>
+            ${conteudo.innerHTML}
+        </div>`;
+        setTimeout(() => {
+            html2canvas(tmp, { backgroundColor:"#ffffff", scale:2 }).then(canvas => {
+                if(eraEscuro) document.body.classList.add('dark');
+                tmp.innerHTML = "";
+                document.getElementById('resultImage').src = canvas.toDataURL();
+                abrirModal('photoOverlay');
+            });
+        }, 200);
+    }
     function voltarParaHistorico() { abrirHistorico(); }
 
     function voltarAoMenu() { esconderTudo(); document.getElementById('menuSection').classList.remove('hidden'); }
