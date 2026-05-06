@@ -1,27 +1,59 @@
-name: Zerar Planilhas às 17h
+const admin = require('firebase-admin');
 
-on:
-  schedule:
-    - cron: '0 20 * * *'
-  workflow_dispatch:
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
-jobs:
-  zerar:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: process.env.FIREBASE_DATABASE_URL
+});
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
+const db = admin.database();
 
-      - name: Instalar dependencias
-        run: npm install firebase-admin
+async function zerarPlanilhas() {
+  try {
+    console.log('🔄 Iniciando zeragem das planilhas...');
 
-      - name: Rodar script
-        env:
-          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: node scripts/zerar-planilhas.js
+    const memoriaRef = db.ref('memoria');
+    const snapshot = await memoriaRef.once('value');
+    const todosUsuarios = snapshot.val();
+
+    if (!todosUsuarios) {
+      console.log('⚠️ Nenhum dado encontrado.');
+      process.exit(0);
+    }
+
+    // Apenas estes setores serão zerados
+    const SETORES_PARA_ZERAR = ['Triados', 'Não Triado', 'Pregação'];
+
+    let totalZerados = 0;
+
+    for (const usuario of Object.keys(todosUsuarios)) {
+      const memoriaUsuario = todosUsuarios[usuario];
+
+      for (const setor of Object.keys(memoriaUsuario)) {
+        if (!SETORES_PARA_ZERAR.includes(setor)) {
+          console.log(`⛔ Pulando setor: ${usuario}/${setor}`);
+          continue;
+        }
+
+        const itens = memoriaUsuario[setor];
+        if (!Array.isArray(itens) || itens.length === 0) continue;
+
+        const itensZerados = itens.map(item => ({ ...item, qtd: 0 }));
+        await db.ref(`memoria/${usuario}/${setor}`).set(itensZerados);
+
+        console.log(`✅ Zerado: ${usuario} → ${setor} (${itens.length} itens)`);
+        totalZerados++;
+      }
+    }
+
+    console.log(`\n✅ Concluído! ${totalZerados} setor(es) zerado(s).`);
+    process.exit(0);
+
+  } catch (err) {
+    console.error('❌ Erro:', err.message);
+    process.exit(1);
+  }
+}
+
+zerarPlanilhas();
