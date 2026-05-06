@@ -97,7 +97,7 @@
     </div>
 </div>
 
-<div id="modalConfirmHistorico" class="modal-overlay hidden">
+<div id="modalConfirmHistorico" class="modal-overlay hidden" style="z-index:8500;">
     <div class="modal-content">
         <h3 style="margin:0; color:var(--danger);">Excluir Registro?</h3>
         <p style="font-size:13px; color:#777; margin:10px 0;">Esta ação não pode ser desfeita.</p>
@@ -216,7 +216,7 @@
         <p style="font-size:12px; color:#666; margin:0 0 10px 0; text-align:center;">Itens adicionados aqui aparecerão na busca de todos.</p>
         <input type="tel" id="baseCod" class="input-single" placeholder="Código" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
         <input type="text" id="baseNome" class="input-single" placeholder="Nome do Produto">
-        <input type="tel" id="basePreco" class="input-single" placeholder="Preço (R$ 0,00)" oninput="maskMoeda(this)">
+        <input type="tel" id="basePreco" class="input-single" placeholder="R$ 0,00" oninput="maskMoeda(this)" onfocus="if(!this.value)this.value='';" onblur="if(!this.value||this.value==='R$ 0,00')this.value='';">
         <button type="button" id="btnCadastrarBase" class="btn-purple" style="margin-bottom: 15px;" onclick="adicionarBaseProduto()">CADASTRAR PRODUTO</button>
         <div style="overflow-x: auto;">
             <table>
@@ -275,7 +275,7 @@
             <input type="tel" id="novoCod" class="input-single" placeholder="Cód" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
             <input type="text" id="novoItem" class="input-single" placeholder="Produto" autocomplete="off" oninput="buscarDadosProdutoGaleria()">
             <div id="sugestoesProduto" style="display:flex; flex-direction:column; gap:5px; margin-top:-5px; margin-bottom:8px; max-height:150px; overflow-y:auto;"></div>
-            <input type="tel" id="novoPreco" class="input-single" placeholder="R$ 0,00" oninput="maskMoeda(this)">
+            <input type="tel" id="novoPreco" class="input-single" placeholder="R$ 0,00" oninput="maskMoeda(this)" onfocus="if(!this.value)this.value='';" onblur="if(!this.value||this.value==='R$ 0,00')this.value='';">
             <input type="tel" id="novoQtd" class="input-single" placeholder="Qtd" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
             <button type="button" class="btn-purple" onclick="adicionarItemNovo()">Cadastrar</button>
         </div>
@@ -345,7 +345,18 @@
     function esconderTudo() { TODAS_SECOES.forEach(id => document.getElementById(id).classList.add('hidden')); }
 
     function saveD() { db.ref('memoria/' + usuarioAtivoNode).set(memoria).then(() => render()); }
-    function maskMoeda(i) { let v = i.value.replace(/\D/g, ""); v = (v/100).toFixed(2).replace(".",","); i.value = "R$ " + v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1."); }
+    function maskMoeda(i) {
+        let v = i.value.replace(/\D/g, '');
+        // Remove zeros à esquerda
+        v = v.replace(/^0+/, '');
+        if(v === '') { i.value = ''; return; }
+        // Limita a 10 dígitos para não estourar
+        v = v.slice(-10);
+        const num = parseInt(v, 10) / 100;
+        i.value = 'R$ ' + num.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+        // Cursor sempre no final
+        setTimeout(() => { i.selectionStart = i.selectionEnd = i.value.length; }, 0);
+    }
     function alternarVisibilidade(id) { const i = document.getElementById(id); i.type = i.type === "password" ? "text" : "password"; }
     function abrirModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function fecharModal(id) { document.getElementById(id).classList.add('hidden'); }
@@ -650,7 +661,8 @@
         const c = document.getElementById('novoCod').value, it = document.getElementById('novoItem').value, p = document.getElementById('novoPreco').value || "R$ 0,00", q = document.getElementById('novoQtd').value || "0";
         if(!c || !it) return;
         if(!memoria[window.setorAtivo]) memoria[window.setorAtivo] = [];
-        if(memoria[window.setorAtivo].find(produto => produto.cod === c)) return mostrarToast("Item já existe nesta planilha!");
+        const itemDuplicado = memoria[window.setorAtivo].find(produto => produto.cod === c);
+        if(itemDuplicado) return mostrarToast("⚠️ Cód " + c + " já existe: " + itemDuplicado.item);
         const idxBase = baseProdutos.findIndex(prod => prod.cod === c);
         if(idxBase >= 0) { if(p !== "R$ 0,00") baseProdutos[idxBase].preco = p; baseProdutos[idxBase].nome = it; }
         else { baseProdutos.push({cod:c, nome:it, preco:p}); }
@@ -1119,8 +1131,8 @@
 
     function gerarChaveHistorico() {
         const agora = new Date();
-        // Chave única: timestamp
-        return String(agora.getTime());
+        // Prefixo "reg_" para evitar chave numérica pura no Firebase path
+        return 'reg_' + String(agora.getTime());
     }
 
     function formatarDataHora(agora) {
@@ -1179,10 +1191,12 @@
     }
 
     function carregarHistorico() {
-        db.ref('historico_planilhas/' + usuarioAtivoNode).orderByChild('timestamp').once('value', snap => {
+        db.ref('historico_planilhas/' + usuarioAtivoNode).once('value', snap => {
             const raw = snap.val() || {};
-            // Ordena do mais recente ao mais antigo
-            historicoRegistros = Object.values(raw).sort((a, b) => b.timestamp - a.timestamp);
+            // Usa a key REAL do Firebase para exclusão segura
+            historicoRegistros = Object.entries(raw).map(([firebaseKey, val]) => {
+                return Object.assign({}, val, { firebaseKey });
+            }).sort((a, b) => b.timestamp - a.timestamp);
             renderListaHistorico(historicoRegistros);
         });
     }
@@ -1225,17 +1239,27 @@
                 </div>
                 <div class="historico-card-resumo">${resumo}</div>
                 <div style="display:flex; gap:6px; margin-top:8px;">
-                    <button type="button" style="flex:1; background:var(--purple); border:none; border-radius:6px; color:white; font-weight:bold; font-size:12px; padding:8px; cursor:pointer;" onclick="abrirDetalheHistorico('${r.chave}')">👁️ VER</button>
-                    <button type="button" style="flex:1; background:#17a2b8; border:none; border-radius:6px; color:white; font-weight:bold; font-size:12px; padding:8px; cursor:pointer;" onclick="printRegistroHistoricoById('${r.chave}')">📸 PRINT</button>
-                    <button type="button" style="flex:0; background:var(--danger); border:none; border-radius:6px; color:white; font-weight:bold; font-size:12px; padding:8px 12px; cursor:pointer;" onclick="confirmarExcluirHistorico('${r.chave}')">🗑️</button>
+                    <button type="button" class="hist-btn-ver" data-chave="${r.firebaseKey}" style="flex:1; background:var(--purple); border:none; border-radius:6px; color:white; font-weight:bold; font-size:12px; padding:8px; cursor:pointer;">👁️ VER</button>
+                    <button type="button" class="hist-btn-print" data-chave="${r.firebaseKey}" style="flex:1; background:#17a2b8; border:none; border-radius:6px; color:white; font-weight:bold; font-size:12px; padding:8px; cursor:pointer;">📸 PRINT</button>
+                    <button type="button" class="hist-btn-del" data-chave="${r.firebaseKey}" style="flex:0; background:var(--danger); border:none; border-radius:6px; color:white; font-weight:bold; font-size:12px; padding:8px 12px; cursor:pointer;">🗑️</button>
                 </div>
             `;
             div.appendChild(card);
         });
+
+        // Event delegation — resolve problema de aspas em onclick inline
+        div.onclick = function(e) {
+            const ver   = e.target.closest('.hist-btn-ver');
+            const print = e.target.closest('.hist-btn-print');
+            const del   = e.target.closest('.hist-btn-del');
+            if(ver)   abrirDetalheHistorico(ver.dataset.chave);
+            if(print) printRegistroHistoricoById(print.dataset.chave);
+            if(del)   confirmarExcluirHistorico(del.dataset.chave);
+        };
     }
 
     function abrirDetalheHistorico(chave) {
-        const r = historicoRegistros.find(x => x.chave === chave);
+        const r = historicoRegistros.find(x => x.firebaseKey === chave);
         if(!r) return mostrarToast("Registro não encontrado!");
         registroAtualDetalhe = r;
 
@@ -1321,7 +1345,7 @@
     }
 
     function printRegistroHistoricoById(chave) {
-        const r = historicoRegistros.find(x => x.chave === chave);
+        const r = historicoRegistros.find(x => x.firebaseKey === chave);
         if(!r) return mostrarToast("Registro não encontrado!");
         executarPrintHistorico(r);
     }
@@ -1344,13 +1368,38 @@
     }
 
     function confirmarExcluirHistorico(chave) {
+        if(!chave) return mostrarToast("❌ Chave inválida!");
         abrirModal('modalConfirmHistorico');
-        document.getElementById('confirmHistoricoBtnYes').onclick = function() {
-            db.ref('historico_planilhas/' + usuarioAtivoNode + '/' + chave).remove().then(() => {
-                fecharModal('modalConfirmHistorico');
-                mostrarToast("✅ Registro excluído!");
-                carregarHistorico();
-            }).catch(() => mostrarToast("❌ Erro ao excluir!"));
+        // Remove onclick anterior para evitar acúmulo de listeners
+        const btn = document.getElementById('confirmHistoricoBtnYes');
+        const btnNovo = btn.cloneNode(true);
+        btn.parentNode.replaceChild(btnNovo, btn);
+        btnNovo.onclick = function() {
+            // Busca todos os registros e deleta pelo timestamp para garantir
+            const r = historicoRegistros.find(x => x.firebaseKey === chave);
+            if(!r) return mostrarToast("❌ Registro não encontrado!");
+            // Tenta deletar pela firebaseKey direta
+            const ref = db.ref('historico_planilhas/' + usuarioAtivoNode);
+            ref.once('value', snap => {
+                let deletou = false;
+                snap.forEach(child => {
+                    const val = child.val();
+                    // Compara pelo timestamp para garantir mesmo que a key seja diferente
+                    if(child.key === chave || (val && val.timestamp === r.timestamp)) {
+                        db.ref('historico_planilhas/' + usuarioAtivoNode + '/' + child.key).remove().then(() => {
+                            if(!deletou) {
+                                deletou = true;
+                                fecharModal('modalConfirmHistorico');
+                                mostrarToast("✅ Registro excluído!");
+                                carregarHistorico();
+                            }
+                        });
+                    }
+                });
+                if(!deletou) setTimeout(() => {
+                    if(!deletou) mostrarToast("❌ Não encontrado no banco!");
+                }, 2000);
+            });
         };
     }
 
