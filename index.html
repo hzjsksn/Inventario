@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel - v5.14</title>
+    <title>Painel - v5.15</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -36,6 +36,25 @@
         select { padding: 5px; border-radius: 5px; border: 1px solid var(--border); width: 100%; background: var(--input-bg); color: var(--text); }
         .btn-sugestao { background: var(--th-bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin: 0; text-align: left; font-weight: bold; font-size: 14px; text-transform: none; display: flex; justify-content: space-between; }
         #btnDarkMode { position: fixed; top: 12px; right: 12px; z-index: 9000; width: 42px; height: 42px; border-radius: 50%; padding: 0; margin: 0; font-size: 20px; background: var(--card); border: 2px solid var(--border); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+
+        /* ===== HISTÓRICO STYLES ===== */
+        .historico-card {
+            background: var(--th-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+        }
+        .historico-card:active { box-shadow: 0 0 0 3px rgba(111,66,193,0.3); }
+        .historico-card-header { display: flex; justify-content: space-between; align-items: center; }
+        .historico-card-data { font-size: 13px; font-weight: bold; color: var(--purple); }
+        .historico-card-hora { font-size: 11px; color: var(--secondary); }
+        .historico-card-resumo { font-size: 11px; color: var(--text); opacity: 0.75; margin-top: 5px; }
+        .historico-detalhe-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 7500; display: flex; flex-direction: column; align-items: center; padding: 10px; box-sizing: border-box; overflow-y: auto; }
+        .historico-detalhe-box { background: var(--card); border-radius: 12px; width: 100%; max-width: 480px; padding: 15px; margin-top: 10px; margin-bottom: 10px; }
+        #printHistoricoArea { background: white; padding: 20px; width: 450px; position: absolute; left: -9999px; }
     </style>
 </head>
 <body onload="carregarTudo(); document.body.classList.add('login-mode')">
@@ -43,6 +62,7 @@
 
 <div id="toast">Aviso</div>
 <div id="printTempArea"></div>
+<div id="printHistoricoArea"></div>
 
 <!-- Tela offline -->
 <div id="offlineScreen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); z-index:99999; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px; box-sizing:border-box;">
@@ -74,6 +94,15 @@
         <p style="font-size:14px; color:#555; margin: 15px 0;">Todos os itens desta planilha serão apagados. Deseja continuar?</p>
         <button type="button" class="btn-red" id="confirmSetorBtnYes">SIM, EXCLUIR</button>
         <button type="button" class="btn-gray" onclick="fecharModal('modalConfirmSetor')">CANCELAR</button>
+    </div>
+</div>
+
+<div id="modalConfirmHistorico" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h3 style="margin:0; color:var(--danger);">Excluir Registro?</h3>
+        <p style="font-size:13px; color:#777; margin:10px 0;">Esta ação não pode ser desfeita.</p>
+        <button type="button" class="btn-red" id="confirmHistoricoBtnYes">EXCLUIR</button>
+        <button type="button" class="btn-gray" onclick="fecharModal('modalConfirmHistorico')">CANCELAR</button>
     </div>
 </div>
 
@@ -109,6 +138,17 @@
     <button type="button" class="btn-gray" style="width:200px; margin-top:15px;" onclick="fecharFoto()">FECHAR</button>
 </div>
 
+<!-- DETALHE DO HISTÓRICO -->
+<div id="historicoDetalheOverlay" class="historico-detalhe-overlay hidden">
+    <div class="historico-detalhe-box">
+        <h3 id="historicoDetalheTitulo" style="text-align:center; color:var(--purple); margin:0 0 5px 0;">📋 Registro</h3>
+        <p id="historicoDetalheData" style="text-align:center; font-size:12px; color:var(--secondary); margin:0 0 15px 0;"></p>
+        <div id="historicoDetalheCorpo"></div>
+        <button type="button" class="btn-blue" style="background:#17a2b8; margin-bottom:8px;" onclick="printRegistroHistorico()">📸 PRINT DESTE REGISTRO</button>
+        <button type="button" class="btn-gray" onclick="fecharDetalheHistorico()">FECHAR</button>
+    </div>
+</div>
+
 <div class="container">
 
     <div id="loginSection">
@@ -140,6 +180,8 @@
         <h2 style="text-align: center;">Menu Principal</h2>
         <button type="button" class="btn-orange" style="margin-bottom: 15px;" onclick="abrirGaleria()">📦 Paletes (Fotos Públicas)</button>
         <button type="button" class="btn-blue" style="margin-bottom: 15px; background:#17a2b8;" onclick="abrirGraficos()">📊 Gráfico de Valores</button>
+        <!-- BOTÃO HISTÓRICO -->
+        <button type="button" class="btn-purple" style="margin-bottom: 15px; background:#5a3e9b;" onclick="abrirHistorico()">📋 Histórico de Planilhas</button>
         <div id="botoesSetores" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;"></div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
             <button type="button" id="btnGerenciamento" class="btn-gray hidden" style="margin-top:0; background:#343a40;" onclick="toggleGerenciamento()">⚙️ GERENCIAMENTO DO APP ▼</button>
@@ -246,9 +288,26 @@
         <button type="button" id="btnZerar" class="btn-orange hidden" onclick="tentarZerar()">🔄 ZERAR SETOR</button>
         <button type="button" class="btn-gray" onclick="voltar()">VOLTAR AO MENU</button>
     </div>
+
+    <!-- SEÇÃO HISTÓRICO -->
+    <div id="historicoSection" class="hidden">
+        <h2 style="text-align:center; margin-bottom:5px;">📋 Histórico de Planilhas</h2>
+        <p style="font-size:12px; color:var(--secondary); text-align:center; margin:0 0 15px 0;">Registros salvos manualmente</p>
+
+        <button type="button" class="btn-green" style="margin-bottom:15px;" onclick="salvarSnapshotHistorico()">💾 SALVAR REGISTRO AGORA</button>
+
+        <input type="text" id="buscaHistorico" class="input-single" placeholder="🔍 Filtrar por data ou setor..." oninput="filtrarHistorico()" style="margin-bottom:10px;">
+
+        <div id="listaHistorico" style="margin-bottom:15px;">
+            <p style="text-align:center; color:#999; font-size:13px;">Carregando...</p>
+        </div>
+
+        <button type="button" class="btn-gray" onclick="voltarDoHistorico()">VOLTAR AO MENU</button>
+    </div>
+
 </div>
 
-<div class="version-footer">v5.14 - Painel de Inventário</div>
+<div class="version-footer">v5.15 - Painel de Inventário</div>
 
 <script>
     const firebaseConfig = {
@@ -272,14 +331,17 @@
     let cargoUsuario = "", ehSupremo = false, itemEditandoIndex = null, qtdOriginalItem = 0, usuarioAtivoNode = "";
     let toastTimeout, inactivityTimer;
 
-    // Storage sem recursão
+    // Histórico
+    let historicoRegistros = [];
+    let registroAtualDetalhe = null;
+
     const Storage = {
         get: (key) => { try { return localStorage.getItem(key); } catch(e) { try { return sessionStorage.getItem(key); } catch(e2) { return null; } } },
         set: (key, val) => { try { localStorage.setItem(key, val); } catch(e) { try { sessionStorage.setItem(key, val); } catch(e2) {} } },
         remove: (key) => { try { localStorage.removeItem(key); } catch(e) { try { sessionStorage.removeItem(key); } catch(e2) {} } }
     };
 
-    const TODAS_SECOES = ['loginSection','registroSection','menuSection','planilhaSection','galeriaSection','baseProdutosSection','gerenciarSetoresSection','membrosSection','graficosSection'];
+    const TODAS_SECOES = ['loginSection','registroSection','menuSection','planilhaSection','galeriaSection','baseProdutosSection','gerenciarSetoresSection','membrosSection','graficosSection','historicoSection'];
     function esconderTudo() { TODAS_SECOES.forEach(id => document.getElementById(id).classList.add('hidden')); }
 
     function saveD() { db.ref('memoria/' + usuarioAtivoNode).set(memoria).then(() => render()); }
@@ -477,13 +539,9 @@
         if(cargoUsuario !== "Auxiliar") html += `<th>X</th>`;
         html += `</tr></thead><tbody>`;
         (memoria[window.setorAtivo] || []).forEach((o, i) => {
-            // Busca preço atualizado da base mestra
             const prodBase = baseProdutos.find(p => p.cod === o.cod);
             const precoAtual = prodBase ? prodBase.preco : o.preco;
-            // Atualiza na memória se diferente
-            if(prodBase && prodBase.preco !== o.preco) {
-                memoria[window.setorAtivo][i].preco = prodBase.preco;
-            }
+            if(prodBase && prodBase.preco !== o.preco) { memoria[window.setorAtivo][i].preco = prodBase.preco; }
             html += `<tr><td>${o.cod}</td><td>${o.item}</td>`;
             if(cargoUsuario !== "Auxiliar") html += `<td class="qtd-editavel" onclick="prepararCalc(${i})">${o.qtd}</td>`;
             else html += `<td>${o.qtd}</td>`;
@@ -606,19 +664,15 @@
     function abrirGaleria() { esconderTudo(); document.getElementById('galeriaSection').classList.remove('hidden'); document.getElementById('areaCadastroGaleria').classList.toggle('hidden', cargoUsuario !== "Supervisor"); document.getElementById('buscaGaleria').value = ""; renderGradeGaleria(galeriaPaletes); }
     function voltarDaGaleria() { esconderTudo(); document.getElementById('menuSection').classList.remove('hidden'); }
 
-    // ===================== SALVAR FOTO — FUNÇÃO ORIGINAL QUE FUNCIONAVA =====================
     function salvarFotoGaleria() {
         try {
             const cod = document.getElementById('codPaleteGaleria').value.trim();
             const nome = document.getElementById('nomePaleteGaleria').value.trim();
             const fileInput1 = document.getElementById('fotoPaleteGaleria');
             const fileInput2 = document.getElementById('fotoPaleteGaleria2');
-
             if(!cod || !nome) return mostrarToast("Preencha o Código e o Nome!");
             if(!fileInput1.files || fileInput1.files.length === 0) return mostrarToast("Selecione ao menos a Foto de Cima!");
-
             mostrarToast("Processando fotos...");
-
             const reader1 = new FileReader();
             reader1.onload = function(e1) {
                 const img1 = new Image();
@@ -632,7 +686,6 @@
                         canvas1.width = w1; canvas1.height = h1;
                         canvas1.getContext('2d').drawImage(img1, 0, 0, w1, h1);
                         const base64_1 = canvas1.toDataURL('image/jpeg', 0.8);
-
                         const salvarNoBanco = (base64_2) => {
                             if(!Array.isArray(galeriaPaletes)) galeriaPaletes = [];
                             const idx = galeriaPaletes.findIndex(p => p.cod === cod);
@@ -649,7 +702,6 @@
                                 filtrarGaleria();
                             }).catch(() => mostrarToast("Erro ao salvar no banco!"));
                         };
-
                         if(fileInput2.files && fileInput2.files.length > 0) {
                             const reader2 = new FileReader();
                             reader2.onload = function(e2) {
@@ -666,9 +718,7 @@
                                 img2.src = e2.target.result;
                             };
                             reader2.readAsDataURL(fileInput2.files[0]);
-                        } else {
-                            salvarNoBanco(null);
-                        }
+                        } else { salvarNoBanco(null); }
                     } catch(err) { mostrarToast("Erro ao comprimir imagem!"); }
                 };
                 img1.onerror = () => mostrarToast("Arquivo de imagem inválido!");
@@ -678,7 +728,6 @@
             reader1.readAsDataURL(fileInput1.files[0]);
         } catch(errorGeral) { mostrarToast("Erro geral no sistema!"); }
     }
-    // =========================================================================================
 
     function filtrarGaleria() {
         const termo = document.getElementById('buscaGaleria').value.toLowerCase().trim();
@@ -784,6 +833,7 @@
         clearTimeout(inactivityTimer);
         if(usuarioAtivoNode) { db.ref('setores/' + usuarioAtivoNode).off(); db.ref('memoria/' + usuarioAtivoNode).off(); }
         usuarioAtivoNode = ""; memoria = {}; setores = []; ehSupremo = false;
+        historicoRegistros = [];
         const l = Storage.get(CHAVE + '_LOG');
         if(l) { const o = JSON.parse(l); document.getElementById('usuario').value = o.u; document.getElementById('senha').value = o.s; document.getElementById('lembrar').checked = true; }
         else { document.getElementById('usuario').value = ''; document.getElementById('senha').value = ''; document.getElementById('lembrar').checked = false; }
@@ -825,7 +875,6 @@
         document.getElementById('baseCod').value = p.cod;
         document.getElementById('baseNome').value = p.nome;
         document.getElementById('basePreco').value = p.preco || 'R$ 0,00';
-        // Muda botão para salvar edição
         const btn = document.getElementById('btnCadastrarBase');
         btn.innerText = 'SALVAR EDIÇÃO';
         btn.onclick = () => {
@@ -919,7 +968,6 @@
         nomes.forEach(nome => {
             (memoria[nome] || []).forEach(item => {
                 const qtd = parseInt(item.qtd) || 0;
-                // Busca preço na base mestra pelo código
                 const prodBase = baseProdutos.find(p => p.cod === item.cod);
                 const preco = parseMoeda(prodBase ? prodBase.preco : item.preco);
                 total += qtd * preco;
@@ -972,7 +1020,6 @@
         const chaveHoje = hoje.replace(/\//g, '-');
         db.ref('historico_grafico/' + chaveHoje).once('value', snap => {
             if(!snap.exists()) {
-                // Ainda não salvou hoje — salva agora
                 const valTriados = calcularValorSetor(['Triados']);
                 const valGrupo = calcularValorSetor(['Não Triado', 'Pregação']);
                 db.ref('historico_grafico/' + chaveHoje).set({ data: hoje, triados: valTriados, grupo: valGrupo });
@@ -984,12 +1031,10 @@
         const agora = new Date();
         const alvo = new Date();
         alvo.setHours(8, 30, 0, 0);
-        // Se já passou das 8:30 hoje, agenda para amanhã
         if(agora > alvo) alvo.setDate(alvo.getDate() + 1);
         const msAte = alvo - agora;
         setTimeout(() => {
             salvarHistoricoGrafico();
-            // Reagendar para o próximo dia
             setInterval(salvarHistoricoGrafico, 24 * 60 * 60 * 1000);
         }, msAte);
     }
@@ -997,7 +1042,6 @@
     function abrirGraficos() {
         esconderTudo();
         document.getElementById('graficosSection').classList.remove('hidden');
-        // Só carrega o histórico, não salva ao abrir
         db.ref('historico_grafico').orderByKey().once('value', snap => {
             const raw = snap.val() || {};
             const dias = Object.values(raw).sort((a, b) => {
@@ -1064,9 +1108,252 @@
         document.getElementById('resultImage').src = canvas.toDataURL();
         abrirModal('photoOverlay');
     }
+
     function alternarLoginRegistro(r) { document.getElementById('loginSection').classList.toggle('hidden', r); document.getElementById('registroSection').classList.toggle('hidden', !r); }
     function abrirMembros() { if(cargoUsuario === "Supervisor") { esconderTudo(); document.getElementById('membrosSection').classList.remove('hidden'); renderMembros(); } }
     function voltarAoMenu() { esconderTudo(); document.getElementById('menuSection').classList.remove('hidden'); }
+
+    // =============================================
+    // HISTÓRICO DE PLANILHAS
+    // =============================================
+
+    function gerarChaveHistorico() {
+        const agora = new Date();
+        // Chave única: timestamp
+        return String(agora.getTime());
+    }
+
+    function formatarDataHora(agora) {
+        const d = agora.toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
+        const h = agora.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+        return { data: d, hora: h };
+    }
+
+    function salvarSnapshotHistorico() {
+        const agora = new Date();
+        const { data, hora } = formatarDataHora(agora);
+        const chave = gerarChaveHistorico();
+
+        // Copia profunda da memória atual (todos os setores)
+        const snapshot = {};
+        setores.forEach(s => {
+            if(memoria[s] && memoria[s].length > 0) {
+                snapshot[s] = memoria[s].map(item => ({
+                    cod: item.cod,
+                    item: item.item,
+                    qtd: item.qtd,
+                    preco: item.preco
+                }));
+            }
+        });
+
+        if(Object.keys(snapshot).length === 0) {
+            return mostrarToast("⚠️ Nenhum item para salvar!");
+        }
+
+        const registro = {
+            chave,
+            data,
+            hora,
+            timestamp: agora.getTime(),
+            setores: snapshot
+        };
+
+        db.ref('historico_planilhas/' + usuarioAtivoNode + '/' + chave).set(registro).then(() => {
+            mostrarToast("✅ Registro salvo no histórico!");
+            carregarHistorico();
+        }).catch(() => mostrarToast("❌ Erro ao salvar histórico!"));
+    }
+
+    function abrirHistorico() {
+        esconderTudo();
+        document.getElementById('historicoSection').classList.remove('hidden');
+        document.getElementById('buscaHistorico').value = '';
+        document.getElementById('listaHistorico').innerHTML = '<p style="text-align:center; color:#999; font-size:13px;">Carregando...</p>';
+        carregarHistorico();
+    }
+
+    function voltarDoHistorico() {
+        esconderTudo();
+        document.getElementById('menuSection').classList.remove('hidden');
+    }
+
+    function carregarHistorico() {
+        db.ref('historico_planilhas/' + usuarioAtivoNode).orderByChild('timestamp').once('value', snap => {
+            const raw = snap.val() || {};
+            // Ordena do mais recente ao mais antigo
+            historicoRegistros = Object.values(raw).sort((a, b) => b.timestamp - a.timestamp);
+            renderListaHistorico(historicoRegistros);
+        });
+    }
+
+    function filtrarHistorico() {
+        const termo = document.getElementById('buscaHistorico').value.toLowerCase().trim();
+        if(!termo) { renderListaHistorico(historicoRegistros); return; }
+        const filtrado = historicoRegistros.filter(r => {
+            if((r.data||"").toLowerCase().includes(termo)) return true;
+            if((r.hora||"").toLowerCase().includes(termo)) return true;
+            // Busca nos setores
+            for(const setor of Object.keys(r.setores||{})) {
+                if(setor.toLowerCase().includes(termo)) return true;
+            }
+            return false;
+        });
+        renderListaHistorico(filtrado);
+    }
+
+    function renderListaHistorico(lista) {
+        const div = document.getElementById('listaHistorico');
+        if(!lista || lista.length === 0) {
+            div.innerHTML = '<p style="text-align:center; color:#999; font-size:13px; margin-top:20px;">Nenhum registro encontrado.<br><br>Use o botão <b>💾 SALVAR REGISTRO AGORA</b> para criar o primeiro.</p>';
+            return;
+        }
+        div.innerHTML = '';
+        lista.forEach(r => {
+            const setoresNomes = Object.keys(r.setores || {});
+            const totalItens = setoresNomes.reduce((acc, s) => acc + (r.setores[s]||[]).length, 0);
+            const resumo = setoresNomes.length > 0
+                ? `${setoresNomes.length} setor(es) · ${totalItens} item(ns)`
+                : 'Sem itens';
+
+            const card = document.createElement('div');
+            card.className = 'historico-card';
+            card.innerHTML = `
+                <div class="historico-card-header">
+                    <span class="historico-card-data">📅 ${r.data}</span>
+                    <span class="historico-card-hora">🕐 ${r.hora}</span>
+                </div>
+                <div class="historico-card-resumo">${resumo}</div>
+                <div style="display:flex; gap:6px; margin-top:8px;">
+                    <button type="button" style="flex:1; background:var(--purple); border:none; border-radius:6px; color:white; font-weight:bold; font-size:12px; padding:8px; cursor:pointer;" onclick="abrirDetalheHistorico('${r.chave}')">👁️ VER</button>
+                    <button type="button" style="flex:1; background:#17a2b8; border:none; border-radius:6px; color:white; font-weight:bold; font-size:12px; padding:8px; cursor:pointer;" onclick="printRegistroHistoricoById('${r.chave}')">📸 PRINT</button>
+                    <button type="button" style="flex:0; background:var(--danger); border:none; border-radius:6px; color:white; font-weight:bold; font-size:12px; padding:8px 12px; cursor:pointer;" onclick="confirmarExcluirHistorico('${r.chave}')">🗑️</button>
+                </div>
+            `;
+            div.appendChild(card);
+        });
+    }
+
+    function abrirDetalheHistorico(chave) {
+        const r = historicoRegistros.find(x => x.chave === chave);
+        if(!r) return mostrarToast("Registro não encontrado!");
+        registroAtualDetalhe = r;
+
+        document.getElementById('historicoDetalheTitulo').innerText = '📋 Detalhes do Registro';
+        document.getElementById('historicoDetalheData').innerText = `📅 ${r.data} · 🕐 ${r.hora}`;
+
+        let html = '';
+        const setoresNomes = Object.keys(r.setores || {});
+        if(setoresNomes.length === 0) {
+            html = '<p style="text-align:center; color:#999;">Sem itens registrados.</p>';
+        } else {
+            setoresNomes.forEach(s => {
+                const itens = r.setores[s] || [];
+                html += `
+                    <div style="background:#000; color:#fff; padding:8px; font-weight:bold; text-align:center; border-radius:6px; margin:10px 0 5px 0; font-size:13px;">
+                        ${s.toUpperCase()}
+                    </div>
+                    <div style="overflow-x:auto;">
+                    <table>
+                        <thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th></tr></thead>
+                        <tbody>
+                `;
+                itens.forEach(item => {
+                    html += `<tr>
+                        <td>${item.cod}</td>
+                        <td>${item.item}</td>
+                        <td style="text-align:center; font-weight:bold; color:#dc3545;">${item.qtd}</td>
+                        <td style="white-space:nowrap;">${item.preco}</td>
+                    </tr>`;
+                });
+                html += `</tbody></table></div>`;
+            });
+        }
+
+        document.getElementById('historicoDetalheCorpo').innerHTML = html;
+        document.getElementById('historicoDetalheOverlay').classList.remove('hidden');
+    }
+
+    function fecharDetalheHistorico() {
+        document.getElementById('historicoDetalheOverlay').classList.add('hidden');
+        registroAtualDetalhe = null;
+    }
+
+    function gerarHtmlParaPrint(r) {
+        let html = `
+            <div style="font-family:sans-serif; padding:10px;">
+                <h2 style="text-align:center; margin:0 0 4px 0;">📋 REGISTRO DE PLANILHA</h2>
+                <p style="text-align:center; font-size:12px; color:#555; margin:0 0 10px 0;">
+                    📅 ${r.data} · 🕐 ${r.hora}
+                </p>
+        `;
+        const setoresNomes = Object.keys(r.setores || {});
+        setoresNomes.forEach(s => {
+            const itens = r.setores[s] || [];
+            html += `<div style="background:#000; color:#fff; padding:8px; font-weight:bold; text-align:center; margin-top:10px; font-size:13px;">${s.toUpperCase()}</div>`;
+            html += `<table style="width:100%; border-collapse:collapse; font-size:11px;">
+                <thead>
+                    <tr style="background:#f8f9fa;">
+                        <th style="border:1px solid #ddd; padding:6px 4px;">Cód</th>
+                        <th style="border:1px solid #ddd; padding:6px 4px;">Item</th>
+                        <th style="border:1px solid #ddd; padding:6px 4px;">Qtd</th>
+                        <th style="border:1px solid #ddd; padding:6px 4px;">Preço</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            itens.forEach(item => {
+                html += `<tr>
+                    <td style="border:1px solid #ddd; padding:6px 4px;">${item.cod}</td>
+                    <td style="border:1px solid #ddd; padding:6px 4px;">${item.item}</td>
+                    <td style="border:1px solid #ddd; padding:6px 4px; text-align:center; font-weight:bold; color:#dc3545;">${item.qtd}</td>
+                    <td style="border:1px solid #ddd; padding:6px 4px; white-space:nowrap;">${item.preco}</td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+        });
+        html += `</div>`;
+        return html;
+    }
+
+    function printRegistroHistorico() {
+        if(!registroAtualDetalhe) return mostrarToast("Nenhum registro aberto!");
+        executarPrintHistorico(registroAtualDetalhe);
+    }
+
+    function printRegistroHistoricoById(chave) {
+        const r = historicoRegistros.find(x => x.chave === chave);
+        if(!r) return mostrarToast("Registro não encontrado!");
+        executarPrintHistorico(r);
+    }
+
+    function executarPrintHistorico(r) {
+        const tmp = document.getElementById('printHistoricoArea');
+        tmp.innerHTML = gerarHtmlParaPrint(r);
+        const eraEscuro = document.body.classList.contains('dark');
+        if(eraEscuro) document.body.classList.remove('dark');
+        setTimeout(() => {
+            html2canvas(tmp, { backgroundColor:"#ffffff", scale:2 }).then(canvas => {
+                if(eraEscuro) document.body.classList.add('dark');
+                tmp.innerHTML = "";
+                document.getElementById('resultImage').src = canvas.toDataURL();
+                // Fecha detalhe se estiver aberto para mostrar a foto
+                document.getElementById('historicoDetalheOverlay').classList.add('hidden');
+                abrirModal('photoOverlay');
+            });
+        }, 300);
+    }
+
+    function confirmarExcluirHistorico(chave) {
+        abrirModal('modalConfirmHistorico');
+        document.getElementById('confirmHistoricoBtnYes').onclick = function() {
+            db.ref('historico_planilhas/' + usuarioAtivoNode + '/' + chave).remove().then(() => {
+                fecharModal('modalConfirmHistorico');
+                mostrarToast("✅ Registro excluído!");
+                carregarHistorico();
+            }).catch(() => mostrarToast("❌ Erro ao excluir!"));
+        };
+    }
+
 </script>
 </body>
 </html>
