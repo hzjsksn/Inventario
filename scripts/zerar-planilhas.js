@@ -1,6 +1,5 @@
 const admin = require('firebase-admin');
 
-// Inicializa Firebase Admin com service account
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 admin.initializeApp({
@@ -10,81 +9,121 @@ admin.initializeApp({
 
 const db = admin.database();
 
-async function salvarEZerar() {
+// Apenas estes setores serão zerados
+const SETORES_PARA_ZERAR = ['Triados', 'Não Triado', 'Pregação', 'Inventário'];
+
+function parseMoeda(str) {
+  if (!str) return 0;
+  return parseFloat(str.replace('R$', '').replace(/\./g, '').replace(',', '.').trim()) || 0;
+}
+
+function calcularValorSetores(memoria, nomes) {
+  let total = 0;
+  nomes.forEach(nome => {
+    (memoria[nome] || []).forEach(item => {
+      const qtd = parseInt(item.qtd) || 0;
+      const preco = parseMoeda(item.preco);
+      total += qtd * preco;
+    });
+  });
+  return total;
+}
+
+async function salvarHistoricoGrafico(memoria) {
+  const agora = new Date();
+  const hoje = agora.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const chaveHoje = hoje.replace(/\//g, '-');
+
+  const valTriados = calcularValorSetores(memoria, ['Triados']);
+  const valGrupo = calcularValorSetores(memoria, ['Não Triado', 'Pregação']);
+
+  await db.ref('historico_grafico/' + chaveHoje).set({
+    data: hoje,
+    triados: valTriados,
+    grupo: valGrupo
+  });
+
+  console.log(`📊 Gráfico salvo: Triados R$${valTriados.toFixed(2)} | Grupo R$${valGrupo.toFixed(2)}`);
+}
+
+async function salvarSnapshotHistorico(usuarioNode, memoria) {
+  const agora = new Date();
+  const data = agora.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+  const hora = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const firebaseKey = 'reg_' + agora.getTime();
+
+  const snapshot = {};
+  SETORES_PARA_ZERAR.forEach(s => {
+    const itens = memoria[s];
+    if (Array.isArray(itens) && itens.length > 0) {
+      snapshot[s] = itens.map(item => ({
+        cod: item.cod,
+        item: item.item,
+        qtd: item.qtd,
+        preco: item.preco
+      }));
+    }
+  });
+
+  if (Object.keys(snapshot).length === 0) {
+    console.log(`⚠️ ${usuarioNode}: nenhum item para salvar no histórico.`);
+    return;
+  }
+
+  await db.ref('historico_planilhas/' + usuarioNode + '/' + firebaseKey).set({
+    firebaseKey,
+    data,
+    hora,
+    timestamp: agora.getTime(),
+    setores: snapshot
+  });
+
+  console.log(`📋 Histórico salvo: ${usuarioNode} (${firebaseKey})`);
+}
+
+async function zerarPlanilhas() {
   try {
-    const agora = new Date();
-    // Horário de Brasília (UTC-3)
-    const horaBrasilia = new Date(agora.getTime() - 3 * 60 * 60 * 1000);
-    const dataStr = horaBrasilia.toLocaleDateString('pt-BR', {
-      day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Sao_Paulo'
-    });
-    const horaStr = horaBrasilia.toLocaleTimeString('pt-BR', {
-      hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'
-    });
-    const chave = dataStr.replace(/\//g, '-') + '_' + horaStr.replace(':', '-');
+    console.log('🔄 Iniciando processo de fechamento diário...');
 
-    console.log(`🕐 Iniciando zeragem: ${dataStr} às ${horaStr}`);
+    const snapshot = await db.ref('memoria').once('value');
+    const todosUsuarios = snapshot.val();
 
-    // Busca todos os usuários
-    const memoriaSnap = await db.ref('memoria').once('value');
-    const todaMemoria = memoriaSnap.val();
-
-    if (!todaMemoria) {
-      console.log('Nenhum dado encontrado.');
+    if (!todosUsuarios) {
+      console.log('⚠️ Nenhum dado encontrado.');
       process.exit(0);
     }
 
-    const usuarios = Object.keys(todaMemoria);
-    console.log(`👥 Usuários encontrados: ${usuarios.length}`);
+    for (const usuario of Object.keys(todosUsuarios)) {
+      const memoriaUsuario = todosUsuarios[usuario];
 
-    for (const usuario of usuarios) {
-      const memoria = todaMemoria[usuario];
-      if (!memoria || typeof memoria !== 'object') continue;
+      console.log(`\n👤 Processando usuário: ${usuario}`);
 
-      const setores = Object.keys(memoria);
-      const snapshot = {};
-      let temItens = false;
+      // 1. Salva histórico do gráfico (só uma vez, com a memória atual)
+      await salvarHistoricoGrafico(memoriaUsuario);
 
-      // Monta snapshot com itens que têm qtd > 0
-      setores.forEach(setor => {
-        const itens = memoria[setor];
-        if (Array.isArray(itens) && itens.length > 0) {
-          const itensComQtd = itens.filter(i => parseInt(i.qtd) > 0);
-          if (itensComQtd.length > 0) {
-            snapshot[setor] = itensComQtd;
-            temItens = true;
-          }
+      // 2. Salva snapshot no histórico de planilhas
+      await salvarSnapshotHistorico(usuario, memoriaUsuario);
+
+      // 3. Zera apenas os setores definidos
+      for (const setor of SETORES_PARA_ZERAR) {
+        const itens = memoriaUsuario[setor];
+        if (!Array.isArray(itens) || itens.length === 0) {
+          console.log(`⚠️ ${usuario}/${setor}: vazio, pulando.`);
+          continue;
         }
-      });
-
-      if (temItens) {
-        // Salva histórico
-        await db.ref(`historico_planilhas/${usuario}/${chave}`).set({
-          data: dataStr,
-          hora: horaStr,
-          planilhas: snapshot
-        });
-        console.log(`✅ Histórico salvo para: ${usuario}`);
+        const itensZerados = itens.map(item => ({ ...item, qtd: 0 }));
+        await db.ref(`memoria/${usuario}/${setor}`).set(itensZerados);
+        console.log(`✅ Zerado: ${usuario} → ${setor} (${itens.length} itens)`);
       }
-
-      // Zera todas as quantidades
-      setores.forEach(setor => {
-        const itens = memoria[setor];
-        if (Array.isArray(itens)) {
-          itens.forEach(item => { item.qtd = 0; });
-        }
-      });
-
-      await db.ref(`memoria/${usuario}`).set(memoria);
-      console.log(`🔄 Planilhas zeradas para: ${usuario}`);
     }
 
-    console.log('✅ Processo concluído com sucesso!');
+    console.log('\n✅ Fechamento diário concluído!');
     process.exit(0);
+
   } catch (err) {
-    console.error('❌ Erro:', err);
+    console.error('❌ Erro:', err.message);
     process.exit(1);
   }
 }
 
-salvarEZerar();
+zerarPlanilhas();
