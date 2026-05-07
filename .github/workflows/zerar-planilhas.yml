@@ -1,3 +1,6 @@
+'use strict';
+process.env.LANG = 'pt_BR.UTF-8';
+
 const admin = require('firebase-admin');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -9,8 +12,8 @@ admin.initializeApp({
 
 const db = admin.database();
 
-// Apenas estes setores serão zerados
-const SETORES_PARA_ZERAR = ['Triados', 'Não Triado', 'Pregação', 'Inventário'];
+// Setores que serão salvos no histórico e zerados
+const SETORES_PARA_ZERAR = ['Triados', 'N\u00e3o Triado', 'Prega\u00e7\u00e3o', 'Invent\u00e1rio'];
 
 function parseMoeda(str) {
   if (!str) return 0;
@@ -20,7 +23,9 @@ function parseMoeda(str) {
 function calcularValorSetores(memoria, nomes) {
   let total = 0;
   nomes.forEach(nome => {
-    (memoria[nome] || []).forEach(item => {
+    const itens = memoria[nome];
+    if (!Array.isArray(itens)) return;
+    itens.forEach(item => {
       const qtd = parseInt(item.qtd) || 0;
       const preco = parseMoeda(item.preco);
       total += qtd * preco;
@@ -35,7 +40,7 @@ async function salvarHistoricoGrafico(memoria) {
   const chaveHoje = hoje.replace(/\//g, '-');
 
   const valTriados = calcularValorSetores(memoria, ['Triados']);
-  const valGrupo = calcularValorSetores(memoria, ['Não Triado', 'Pregação']);
+  const valGrupo = calcularValorSetores(memoria, ['N\u00e3o Triado', 'Prega\u00e7\u00e3o']);
 
   await db.ref('historico_grafico/' + chaveHoje).set({
     data: hoje,
@@ -43,7 +48,7 @@ async function salvarHistoricoGrafico(memoria) {
     grupo: valGrupo
   });
 
-  console.log(`📊 Gráfico salvo: Triados R$${valTriados.toFixed(2)} | Grupo R$${valGrupo.toFixed(2)}`);
+  console.log('Grafico salvo - Triados: R$' + valTriados.toFixed(2) + ' | Grupo: R$' + valGrupo.toFixed(2));
 }
 
 async function salvarSnapshotHistorico(usuarioNode, memoria) {
@@ -57,16 +62,16 @@ async function salvarSnapshotHistorico(usuarioNode, memoria) {
     const itens = memoria[s];
     if (Array.isArray(itens) && itens.length > 0) {
       snapshot[s] = itens.map(item => ({
-        cod: item.cod,
-        item: item.item,
-        qtd: item.qtd,
-        preco: item.preco
+        cod: item.cod || '',
+        item: item.item || '',
+        qtd: item.qtd || 0,
+        preco: item.preco || 'R$ 0,00'
       }));
     }
   });
 
   if (Object.keys(snapshot).length === 0) {
-    console.log(`⚠️ ${usuarioNode}: nenhum item para salvar no histórico.`);
+    console.log('Aviso: ' + usuarioNode + ' sem itens para historico.');
     return;
   }
 
@@ -78,50 +83,56 @@ async function salvarSnapshotHistorico(usuarioNode, memoria) {
     setores: snapshot
   });
 
-  console.log(`📋 Histórico salvo: ${usuarioNode} (${firebaseKey})`);
+  console.log('Historico salvo: ' + usuarioNode + ' (' + firebaseKey + ')');
 }
 
 async function zerarPlanilhas() {
   try {
-    console.log('🔄 Iniciando processo de fechamento diário...');
+    console.log('Iniciando fechamento diario...');
 
     const snapshot = await db.ref('memoria').once('value');
     const todosUsuarios = snapshot.val();
 
     if (!todosUsuarios) {
-      console.log('⚠️ Nenhum dado encontrado.');
+      console.log('Nenhum dado encontrado.');
       process.exit(0);
     }
 
-    for (const usuario of Object.keys(todosUsuarios)) {
+    const usuarios = Object.keys(todosUsuarios);
+    console.log('Usuarios encontrados: ' + usuarios.length);
+
+    for (const usuario of usuarios) {
       const memoriaUsuario = todosUsuarios[usuario];
+      if (!memoriaUsuario || typeof memoriaUsuario !== 'object') continue;
 
-      console.log(`\n👤 Processando usuário: ${usuario}`);
+      console.log('\nProcessando: ' + usuario);
 
-      // 1. Salva histórico do gráfico (só uma vez, com a memória atual)
+      // 1. Salva grafico
       await salvarHistoricoGrafico(memoriaUsuario);
 
-      // 2. Salva snapshot no histórico de planilhas
+      // 2. Salva snapshot historico
       await salvarSnapshotHistorico(usuario, memoriaUsuario);
 
-      // 3. Zera apenas os setores definidos
+      // 3. Zera os setores
       for (const setor of SETORES_PARA_ZERAR) {
         const itens = memoriaUsuario[setor];
         if (!Array.isArray(itens) || itens.length === 0) {
-          console.log(`⚠️ ${usuario}/${setor}: vazio, pulando.`);
+          console.log('Pulando (vazio): ' + usuario + '/' + setor);
           continue;
         }
-        const itensZerados = itens.map(item => ({ ...item, qtd: 0 }));
-        await db.ref(`memoria/${usuario}/${setor}`).set(itensZerados);
-        console.log(`✅ Zerado: ${usuario} → ${setor} (${itens.length} itens)`);
+        const itensZerados = itens.map(item => Object.assign({}, item, { qtd: 0 }));
+        await db.ref('memoria/' + usuario + '/' + setor).set(itensZerados);
+        console.log('Zerado: ' + usuario + ' -> ' + setor + ' (' + itens.length + ' itens)');
       }
     }
 
-    console.log('\n✅ Fechamento diário concluído!');
+    console.log('\nFechamento diario concluido!');
+    await db.app.delete();
     process.exit(0);
 
   } catch (err) {
-    console.error('❌ Erro:', err.message);
+    console.error('ERRO: ' + err.message);
+    console.error(err.stack);
     process.exit(1);
   }
 }
