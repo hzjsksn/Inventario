@@ -901,7 +901,13 @@
     function renderBaseProdutos(){
         const c=document.getElementById('corpoBaseProdutos');c.innerHTML='';
         if(baseProdutos.length===0){c.innerHTML=`<tr><td colspan="5" style="text-align:center; color:#999;">Nenhum produto cadastrado.</td></tr>`;return;}
-        baseProdutos.forEach((p,i)=>{
+        
+        // Separar por status e ordenar
+        const naoMexidos=baseProdutos.filter(p=>!p.mexido);
+        const mexidos=baseProdutos.filter(p=>p.mexido).sort((a,b)=>(b.dataMexido||0)-(a.dataMexido||0));
+        const produtosOrdenados=[...naoMexidos,...mexidos];
+        
+        produtosOrdenados.forEach((p,i)=>{
             let status='⚪ Não Mexido';
             let corStatus='#6c757d';
             if(p.mexido&&p.dataMexido){
@@ -910,7 +916,7 @@
                 status=`✅ Mexido em ${dataFormatada}`;
                 corStatus='#dc3545';
             }
-            c.innerHTML+=`<tr><td>${p.cod}</td><td>${p.nome}</td><td>${p.preco||'R$ 0,00'}</td><td style="text-align:center; color:${corStatus}; font-size:10px; font-weight:bold;">${status}</td><td style="text-align:center; display:flex; gap:4px; justify-content:center;"><button type="button" style="background:#17a2b8; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="editarBaseProduto(${i})">✏️</button><button type="button" style="background:red; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="confirmarExcluirBase(${i})">❌</button></td></tr>`;
+            c.innerHTML+=`<tr><td>${p.cod}</td><td>${p.nome}</td><td>${p.preco||'R$ 0,00'}</td><td style="text-align:center; color:${corStatus}; font-size:10px; font-weight:bold;">${status}</td><td style="text-align:center; display:flex; gap:4px; justify-content:center;"><button type="button" style="background:#17a2b8; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="editarBaseProduto(${baseProdutos.indexOf(p)})">✏️</button><button type="button" style="background:red; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="confirmarExcluirBase(${baseProdutos.indexOf(p)})">❌</button></td></tr>`;
         });
     }
     function editarBaseProduto(i){
