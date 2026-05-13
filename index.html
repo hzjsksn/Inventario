@@ -120,7 +120,7 @@
     <!-- REGISTRO COM CAMPO NOME -->
     <div id="registroSection" class="hidden">
         <h2 style="text-align:center;">Registro</h2>
-        <input type="text" id="regNome" class="input-single" placeholder="Nome completo">
+        <input type="text" id="regNome" class="input-single" placeholder="Nome">
         <input type="text" id="regUsuario" class="input-single" placeholder="Usuário (login)">
         <div class="input-row">
             <input type="password" id="regSenha" placeholder="Senha">
@@ -157,6 +157,7 @@
         <button type="button" id="btnRegistrosGerais" class="btn-green hidden" style="margin-bottom:15px; background:#155724;" onclick="abrirRegistrosGerais()">🗂️ Registros Gerais</button>
         <div id="botoesSetores" style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:15px;"></div>
         <div style="display:flex; flex-direction:column; gap:8px;">
+            <button type="button" id="btnGerenciarPlanilhasPublica" class="btn-purple hidden" style="margin-top:0;" onclick="abrirGerenciarSetores()">📋 GERENCIAR PLANILHAS</button>
             <button type="button" id="btnGerenciamento" class="btn-gray hidden" style="margin-top:0; background:#343a40;" onclick="toggleGerenciamento()">⚙️ GERENCIAMENTO DO APP ▼</button>
             <div id="painelGerenciamento" style="display:none; flex-direction:column; gap:8px; padding:10px; background:rgba(0,0,0,0.1); border-radius:8px;">
                 <button type="button" id="btnBaseProdutos" class="btn-blue hidden" style="margin-top:0; background:#17a2b8;" onclick="abrirBaseProdutos()">Base Mestra (Supremo)</button>
@@ -190,7 +191,7 @@
         <input type="text" id="baseNome" class="input-single" placeholder="Nome do Produto">
         <input type="tel" id="basePreco" class="input-single" placeholder="R$ 0,00" oninput="maskMoeda(this)" onfocus="if(!this.value)this.value='';" onblur="if(!this.value||this.value==='R$ 0,00')this.value='';">
         <button type="button" id="btnCadastrarBase" class="btn-purple" style="margin-bottom:15px;" onclick="adicionarBaseProduto()">CADASTRAR PRODUTO</button>
-        <div style="overflow-x:auto;"><table><thead><tr><th>Cód</th><th>Nome</th><th>Preço</th><th>Ação</th></tr></thead><tbody id="corpoBaseProdutos"></tbody></table></div>
+        <div style="overflow-x:auto;"><table><thead><tr><th>Cód</th><th>Nome</th><th>Preço</th><th>Status</th><th>Ação</th></tr></thead><tbody id="corpoBaseProdutos"></tbody></table></div>
         <button type="button" class="btn-gray" onclick="voltarAoMenuBase()">VOLTAR AO MENU</button>
     </div>
 
@@ -327,7 +328,7 @@
     const SETORES_PALETES    = ['Inventário','Triados','Pregação','Não Triado'];
     const SETORES_EMBALAGENS = ['Embalagens'];
 
-    let memoria = {}, membros = [], setores = [], baseProdutos = [];
+    let memoria = {}, membros = [], setores = [], baseProdutos = [], planilhas = {}, planilhaAtiva = null;
     let galeriaPaletes = [], galeriaEmbalagens = [];
     let cargoUsuario = "", ehSupremo = false, itemEditandoIndex = null, qtdOriginalItem = 0, usuarioAtivoNode = "";
     let toastTimeout, inactivityTimer;
@@ -489,6 +490,10 @@
         const mostraEmbalagens=areaEscolhida==='embalagens'||cargoUsuario==='Embalagens';
         document.getElementById('btnFotosPaletes').classList.toggle('hidden',!mostraPaletes);
         document.getElementById('btnFotosEmbalagens').classList.toggle('hidden',!mostraEmbalagens);
+        // Mostrar gerenciar planilhas para usuários normais (não-ADM, não-Auxiliar)
+        const mostraGerenciarPlanilhas=cargoUsuario!=='Auxiliar'&&cargoUsuario!=='Supervisor'&&!ehSupremo;
+        document.getElementById('btnGerenciarPlanilhasPublica').classList.toggle('hidden',!mostraGerenciarPlanilhas);
+        
         const container=document.getElementById('botoesSetores');container.innerHTML='';
         const cores={'Inventário':'#17a2b8','Triados':'#28a745','Pregação':'#6f42c1','Não Triado':'#fd7e14','Embalagens':'#e83e8c'};
         const extras=['#20c997','#d63384','#0dcaf0','#6610f2','#dc3545'];
@@ -621,9 +626,12 @@
         });
         
         const totalFormatado='R$ '+totalGeral.toFixed(2).replace('.',',').replace(/(\\d)(?=(\\d{3})+(?!\\d))/g,'$1.');
-        html+=`<tr style="border-top:1px solid #ccc;"><td colspan="4" style="text-align:right; padding:4px 8px; font-size:10px;">TOTAL: <span style="color:#dc3545; font-weight:bold;">${totalFormatado}</span></td><td></td></tr>`;
+        html+=`<tr style="border-top:2px solid #555; background:rgba(0,0,0,0.2);"><td style="text-align:left; font-size:10px; color:#999;">TOTAL:</td><td></td><td></td><td style="text-align:right; font-weight:bold; color:#dc3545; font-size:11px;">${totalFormatado}</td>`;
+        if(podeAlterar())html+=`<td></td>`;
+        html+=`</tr>`;
         
-        div.innerHTML=html+`</tbody></table>`;
+        html+=`</tbody></table>`;
+        div.innerHTML=html;
     }
     function removerItemSabado(i){
         if(!podeAlterar())return;
@@ -727,7 +735,9 @@
         });
         
         const totalFormatado='R$ '+totalGeral.toFixed(2).replace('.',',').replace(/(\\d)(?=(\\d{3})+(?!\\d))/g,'$1.');
-        html+=`<tr style="border-top:1px solid #ccc;"><td colspan="4" style="text-align:right; padding:4px 8px; font-size:10px;">TOTAL: <span style="color:#dc3545; font-weight:bold;">${totalFormatado}</span></td><td></td></tr>`;
+        html+=`<tr style="border-top:2px solid #555; background:rgba(0,0,0,0.2);"><td style="text-align:left; font-size:10px; color:#999;">TOTAL:</td><td></td><td></td><td style="text-align:right; font-weight:bold; color:#dc3545; font-size:11px;">${totalFormatado}</td>`;
+        if(podeAlterar())html+=`<td></td>`;
+        html+=`</tr>`;
         
         c.innerHTML+=html+`</tbody></table>`;
     }
@@ -885,22 +895,32 @@
     function adicionarBaseProduto(){
         const c=document.getElementById('baseCod').value.trim(),n=document.getElementById('baseNome').value.trim(),p=document.getElementById('basePreco').value.trim()||"R$ 0,00";
         if(!c||!n)return mostrarToast("Preencha Código e Nome!");if(baseProdutos.find(x=>x.cod===c))return mostrarToast("Código já existe na base!");
-        baseProdutos.push({cod:c,nome:n,preco:p});
-        db.ref('base_produtos').set(baseProdutos).then(()=>{document.getElementById('baseCod').value="";document.getElementById('baseNome').value="";document.getElementById('basePreco').value="";mostrarToast("✅ Produto salvo!");});
+        baseProdutos.push({cod:c,nome:n,preco:p,mexido:false});
+        db.ref('base_produtos').set(baseProdutos).then(()=>{document.getElementById('baseCod').value="";document.getElementById('baseNome').value="";document.getElementById('basePreco').value="";renderBaseProdutos();mostrarToast("✅ Produto salvo!");});
     }
     function renderBaseProdutos(){
         const c=document.getElementById('corpoBaseProdutos');c.innerHTML='';
-        if(baseProdutos.length===0){c.innerHTML=`<tr><td colspan="4" style="text-align:center; color:#999;">Nenhum produto cadastrado.</td></tr>`;return;}
-        baseProdutos.forEach((p,i)=>{c.innerHTML+=`<tr><td>${p.cod}</td><td>${p.nome}</td><td>${p.preco||'R$ 0,00'}</td><td style="text-align:center; display:flex; gap:4px; justify-content:center;"><button type="button" style="background:#17a2b8; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="editarBaseProduto(${i})">✏️</button><button type="button" style="background:red; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="confirmarExcluirBase(${i})">❌</button></td></tr>`;});
+        if(baseProdutos.length===0){c.innerHTML=`<tr><td colspan="5" style="text-align:center; color:#999;">Nenhum produto cadastrado.</td></tr>`;return;}
+        baseProdutos.forEach((p,i)=>{
+            let status='⚪ Não Mexido';
+            let corStatus='#6c757d';
+            if(p.mexido&&p.dataMexido){
+                const data=new Date(p.dataMexido);
+                const dataFormatada=data.toLocaleDateString('pt-BR');
+                status=`✅ Mexido em ${dataFormatada}`;
+                corStatus='#dc3545';
+            }
+            c.innerHTML+=`<tr><td>${p.cod}</td><td>${p.nome}</td><td>${p.preco||'R$ 0,00'}</td><td style="text-align:center; color:${corStatus}; font-size:10px; font-weight:bold;">${status}</td><td style="text-align:center; display:flex; gap:4px; justify-content:center;"><button type="button" style="background:#17a2b8; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="editarBaseProduto(${i})">✏️</button><button type="button" style="background:red; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="confirmarExcluirBase(${i})">❌</button></td></tr>`;
+        });
     }
     function editarBaseProduto(i){
         const p=baseProdutos[i];document.getElementById('baseCod').value=p.cod;document.getElementById('baseNome').value=p.nome;document.getElementById('basePreco').value=p.preco||'R$ 0,00';
         const btn=document.getElementById('btnCadastrarBase');btn.innerText='SALVAR EDIÇÃO';
-        btn.onclick=()=>{const c=document.getElementById('baseCod').value.trim(),n=document.getElementById('baseNome').value.trim(),pr=document.getElementById('basePreco').value.trim()||'R$ 0,00';if(!c||!n)return mostrarToast("Preencha Código e Nome!");baseProdutos[i]={cod:c,nome:n,preco:pr};db.ref('base_produtos').set(baseProdutos).then(()=>{document.getElementById('baseCod').value="";document.getElementById('baseNome').value="";document.getElementById('basePreco').value="";btn.innerText='CADASTRAR PRODUTO';btn.onclick=adicionarBaseProduto;mostrarToast("✅ Produto editado!");});};window.scrollTo(0,0);
+        btn.onclick=()=>{const c=document.getElementById('baseCod').value.trim(),n=document.getElementById('baseNome').value.trim(),pr=document.getElementById('basePreco').value.trim()||'R$ 0,00';if(!c||!n)return mostrarToast("Preencha Código e Nome!");baseProdutos[i]={cod:c,nome:n,preco:pr,mexido:true,dataMexido:new Date().getTime()};db.ref('base_produtos').set(baseProdutos).then(()=>{document.getElementById('baseCod').value="";document.getElementById('baseNome').value="";document.getElementById('basePreco').value="";btn.innerText='CADASTRAR PRODUTO';btn.onclick=adicionarBaseProduto;renderBaseProdutos();mostrarToast("✅ Produto editado!");});};window.scrollTo(0,0);
     }
     function confirmarExcluirBase(i){abrirModal('modalConfirmBase');document.getElementById('confirmBaseBtnYes').onclick=function(){baseProdutos.splice(i,1);db.ref('base_produtos').set(baseProdutos).then(()=>{fecharModal('modalConfirmBase');mostrarToast("✅ Excluído!");});};}
-    function abrirGerenciarSetores(){if(!(ehSupremo||cargoUsuario==="Supervisor"))return;esconderTudo();document.getElementById('gerenciarSetoresSection').classList.remove('hidden');renderListaSetores();}
-    function voltarAoMenuSetores(){esconderTudo();document.getElementById('menuSection').classList.remove('hidden');}
+    function abrirGerenciarSetores(){esconderTudo();document.getElementById('gerenciarSetoresSection').classList.remove('hidden');renderListaSetores();}
+    function voltarAoMenuSetores(){esconderTudo();document.getElementById('menuSection').classList.remove('hidden');renderMenu();}
     function renderListaSetores(){
         const c=document.getElementById('corpoSetores');c.innerHTML='';
         const fixos=[...SETORES_PALETES,...SETORES_EMBALAGENS];
