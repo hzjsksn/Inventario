@@ -588,20 +588,41 @@
         ['sabCod','sabItem','sabPreco','sabQtd'].forEach(id=>document.getElementById(id).value='');
     }
     function renderTabelaSabado(){
+        // Sincroniza preços com a base
+        let precisaSalvar=false;
+        sabadoItens.forEach((o,i)=>{
+            const pb=baseProdutos.find(p=>p.cod===o.cod);
+            if(pb&&pb.preco!==o.preco){sabadoItens[i].preco=pb.preco;precisaSalvar=true;}
+        });
+        if(precisaSalvar)db.ref('sabado/'+usuarioAtivoNode).set({itens:sabadoItens,pessoas:sabadoPessoas});
+        
         const div=document.getElementById('tabelaSabado');
         if(sabadoItens.length===0){div.innerHTML='<p style="text-align:center; color:#999; font-size:13px;">Nenhum item cadastrado.</p>';return;}
         let html=`<table><thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th>`;
-        if(podeAlterar())html+=`<th>X</th>`;
+        if(podeAlterar())html+=`<th style="width:35px;"></th>`;
         html+=`</tr></thead><tbody>`;
+        
+        let totalGeral=0;
         sabadoItens.forEach((o,i)=>{
-            const pb=baseProdutos.find(p=>p.cod===o.cod);const pr=pb?pb.preco:o.preco;
+            const pb=baseProdutos.find(p=>p.cod===o.cod);
+            const pr=pb?pb.preco:o.preco;
+            const qtd=parseInt(o.qtd)||0;
+            const precoNum=parseMoeda(pr);
+            const valorItem=qtd*precoNum;
+            totalGeral+=valorItem;
+            
             html+=`<tr><td>${o.cod}</td><td>${o.item}</td>`;
             if(podeAlterar())html+=`<td class="qtd-editavel" onclick="prepararCalcSabado(${i})">${o.qtd}</td>`;
             else html+=`<td style="text-align:center; font-weight:bold;">${o.qtd}</td>`;
             html+=`<td>${pr}</td>`;
-            if(podeAlterar())html+=`<td style="text-align:center"><button type="button" style="background:red; padding:4px 8px; width:auto; margin:0; border:none; border-radius:8px; color:white;" onclick="removerItemSabado(${i})">❌</button></td>`;
+            if(podeAlterar())html+=`<td style="text-align:center"><button type="button" style="background:red; padding:3px 6px; width:auto; margin:0; border:none; border-radius:6px; color:white; font-size:11px;" onclick="removerItemSabado(${i})">❌</button></td>`;
+            else html+=`<td></td>`;
             html+=`</tr>`;
         });
+        
+        const totalFormatado='R$ '+totalGeral.toFixed(2).replace('.',',').replace(/(\\d)(?=(\\d{3})+(?!\\d))/g,'$1.');
+        html+=`<tr style="border-top:1px solid #ccc;"><td colspan="4" style="text-align:right; padding:4px 8px; font-size:10px;">TOTAL: <span style="color:#dc3545; font-weight:bold;">${totalFormatado}</span></td><td></td></tr>`;
+        
         div.innerHTML=html+`</tbody></table>`;
     }
     function removerItemSabado(i){
@@ -673,21 +694,41 @@
     }
 
     function render(){
+        // Sincroniza preços com a base
+        let precisaSalvar=false;
+        (memoria[window.setorAtivo]||[]).forEach((o,i)=>{
+            const pb=baseProdutos.find(p=>p.cod===o.cod);
+            if(pb&&pb.preco!==o.preco){memoria[window.setorAtivo][i].preco=pb.preco;precisaSalvar=true;}
+        });
+        if(precisaSalvar)db.ref('memoria/'+usuarioAtivoNode).set(memoria);
+        
         const c=document.getElementById('tabelasSetores');
         c.innerHTML=`<div style="background:#444; color:white; padding:8px; font-weight:bold; text-align:center; border-radius:5px; margin-top:10px;">${window.setorAtivo.toUpperCase()}</div>`;
         let html=`<table><thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th>`;
-        if(podeAlterar())html+=`<th>X</th>`;
+        if(podeAlterar())html+=`<th style="width:35px;"></th>`;
         html+=`</tr></thead><tbody>`;
+        
+        let totalGeral=0;
         (memoria[window.setorAtivo]||[]).forEach((o,i)=>{
-            const pb=baseProdutos.find(p=>p.cod===o.cod);const pr=pb?pb.preco:o.preco;
-            if(pb&&pb.preco!==o.preco)memoria[window.setorAtivo][i].preco=pb.preco;
+            const pb=baseProdutos.find(p=>p.cod===o.cod);
+            const pr=pb?pb.preco:o.preco;
+            const qtd=parseInt(o.qtd)||0;
+            const precoNum=parseMoeda(pr);
+            const valorItem=qtd*precoNum;
+            totalGeral+=valorItem;
+            
             html+=`<tr><td>${o.cod}</td><td>${o.item}</td>`;
             if(podeAlterar())html+=`<td class="qtd-editavel" onclick="prepararCalc(${i})">${o.qtd}</td>`;
             else html+=`<td style="text-align:center; font-weight:bold;">${o.qtd}</td>`;
             html+=`<td>${pr}</td>`;
-            if(podeAlterar())html+=`<td style="text-align:center"><button type="button" style="background:red; padding:4px 8px; width:auto; margin:0; border:none; border-radius:8px; color:white;" onclick="confirmarRemover(${i})">❌</button></td>`;
+            if(podeAlterar())html+=`<td style="text-align:center"><button type="button" style="background:red; padding:3px 6px; width:auto; margin:0; border:none; border-radius:6px; color:white; font-size:11px;" onclick="confirmarRemover(${i})">❌</button></td>`;
+            else html+=`<td></td>`;
             html+=`</tr>`;
         });
+        
+        const totalFormatado='R$ '+totalGeral.toFixed(2).replace('.',',').replace(/(\\d)(?=(\\d{3})+(?!\\d))/g,'$1.');
+        html+=`<tr style="border-top:1px solid #ccc;"><td colspan="4" style="text-align:right; padding:4px 8px; font-size:10px;">TOTAL: <span style="color:#dc3545; font-weight:bold;">${totalFormatado}</span></td><td></td></tr>`;
+        
         c.innerHTML+=html+`</tbody></table>`;
     }
 
@@ -789,6 +830,11 @@
         ['novoCod','novoItem','novoPreco','novoQtd'].forEach(id=>document.getElementById(id).value='');
     }
 
+    function obterPrecoCorrigido(cod,precoItem){
+        const pb=baseProdutos.find(p=>p.cod===cod);
+        return pb?pb.preco:precoItem;
+    }
+    
     function gerarRelatorio(){const uni=['Triados','Não Triado','Pregação'];if(uni.includes(window.setorAtivo))tirarFotoGrupo();else tirarFotoIndividual();}
     function tirarFotoIndividual(){
         const bs=document.querySelectorAll('#areaCaptureIndividual button');const cx=document.querySelectorAll('#areaCaptureIndividual th:last-child, #areaCaptureIndividual td:last-child');
@@ -798,15 +844,17 @@
         html2canvas(document.getElementById('areaCaptureIndividual'),{backgroundColor:"#ffffff",scale:2}).then(canvas=>{if(dark)document.body.classList.add('dark');qc.forEach(c=>{c.style.color='';});bs.forEach(b=>b.style.display='');cx.forEach(c=>c.style.display='');document.getElementById('resultImage').src=canvas.toDataURL();abrirModal('photoOverlay');});
     }
     function tirarFotoGrupo(){
-        const tmp=document.getElementById('printTempArea');tmp.innerHTML=`<h2 style="text-align:center;">ESTOQUE ATUAL</h2>`;let tem=false;
-        ['Triados','Não Triado','Pregação'].forEach(s=>{const itens=(memoria[s]||[]).filter(x=>parseInt(x.qtd)>0);if(itens.length>0){tem=true;tmp.innerHTML+=`<div class="print-header">${s.toUpperCase()}</div>`;let t=`<table><thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th></tr></thead><tbody>`;itens.forEach(i=>{t+=`<tr><td>${i.cod}</td><td>${i.item}</td><td style="color:#dc3545; font-weight:bold; text-align:center;">${i.qtd}</td><td style="white-space:nowrap;">${i.preco}</td></tr>`;});tmp.innerHTML+=t+`</tbody></table>`;}});
+        const tmp=document.getElementById('printTempArea');tmp.innerHTML=`<h2 style="text-align:center;">ESTOQUE ATUAL</h2>`;let tem=false;let totalGeralGrupo=0;
+        ['Triados','Não Triado','Pregação'].forEach(s=>{const itens=(memoria[s]||[]).filter(x=>parseInt(x.qtd)>0);if(itens.length>0){tem=true;tmp.innerHTML+=`<div class="print-header">${s.toUpperCase()}</div>`;let t=`<table><thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th><th>Valor Total</th></tr></thead><tbody>`;let totalSetor=0;itens.forEach(i=>{const pr=obterPrecoCorrigido(i.cod,i.preco);const qtd=parseInt(i.qtd)||0;const precoNum=parseMoeda(pr);const valorItem=qtd*precoNum;totalSetor+=valorItem;totalGeralGrupo+=valorItem;const valorFormatado='R$ '+valorItem.toFixed(2).replace('.',',').replace(/(\\d)(?=(\\d{3})+(?!\\d))/g,'$1.');t+=`<tr><td>${i.cod}</td><td>${i.item}</td><td style="color:#dc3545; font-weight:bold; text-align:center;">${i.qtd}</td><td style="white-space:nowrap;">${pr}</td><td style="white-space:nowrap; text-align:right; font-weight:bold;">${valorFormatado}</td></tr>`;});const totalSetorFormatado='R$ '+totalSetor.toFixed(2).replace('.',',').replace(/(\\d)(?=(\\d{3})+(?!\\d))/g,'$1.');t+=`<tr style="background:#f0f0f0; font-weight:bold;"><td colspan="4" style="text-align:right; padding-right:8px;">Subtotal:</td><td style="text-align:right;">${totalSetorFormatado}</td></tr>`;tmp.innerHTML+=t+`</tbody></table>`;}});
         if(!tem)return mostrarToast("Vazio!");
+        const totalGeralFormatado='R$ '+totalGeralGrupo.toFixed(2).replace('.',',').replace(/(\\d)(?=(\\d{3})+(?!\\d))/g,'$1.');
+        tmp.innerHTML+=`<div style="margin-top:20px; text-align:right; font-weight:bold; font-size:18px;">TOTAL GERAL: ${totalGeralFormatado}</div>`;
         const dark=document.body.classList.contains('dark');if(dark)document.body.classList.remove('dark');
         setTimeout(()=>{html2canvas(tmp,{backgroundColor:"#ffffff",scale:2}).then(canvas=>{if(dark)document.body.classList.add('dark');document.getElementById('resultImage').src=canvas.toDataURL();abrirModal('photoOverlay');tmp.innerHTML="";});},400);
     }
     function enviarWhatsAppCustom(){
         let txt="",tem=false;const uni=['Triados','Não Triado','Pregação'];const sp=uni.includes(window.setorAtivo)?uni:[window.setorAtivo];
-        sp.forEach(s=>{const itens=(memoria[s]||[]).filter(x=>parseInt(x.qtd)>0);if(itens.length>0){tem=true;txt+=`📍 *SETOR: ${s.toUpperCase()}*\n\n`;itens.forEach(i=>{txt+=`📊 Dados do Item\n━━━━━━━━━━━━━━\n🆔 Código: ${i.cod}\n📦 Produto: ${i.item}\n💰 Valor Unitário: ${i.preco}\n🔢 Quantidade em Estoque: ${i.qtd}\n━━━━━━━━━━━━━━\n\n`;});}});
+        sp.forEach(s=>{const itens=(memoria[s]||[]).filter(x=>parseInt(x.qtd)>0);if(itens.length>0){tem=true;txt+=`📍 *SETOR: ${s.toUpperCase()}*\n\n`;itens.forEach(i=>{const pr=obterPrecoCorrigido(i.cod,i.preco);const qtd=parseInt(i.qtd)||0;const precoNum=parseMoeda(pr);const valorItem=qtd*precoNum;const valorFormatado='R$ '+valorItem.toFixed(2).replace('.',',').replace(/(\\d)(?=(\\d{3})+(?!\\d))/g,'$1.');txt+=`📊 Dados do Item\n━━━━━━━━━━━━━━\n🆔 Código: ${i.cod}\n📦 Produto: ${i.item}\n💰 Valor Unitário: ${pr}\n🔢 Quantidade: ${i.qtd}\n💵 Valor Total: ${valorFormatado}\n━━━━━━━━━━━━━━\n\n`;});}});
         if(!tem)return mostrarToast("Nenhum item com quantidade maior que zero!");
         const uri=encodeURIComponent(txt.trim());
         function tk(n){if(typeof window.AppInventor!=='undefined'&&typeof window.AppInventor.setWebViewString==='function')window.AppInventor.setWebViewString("whatsapp://send?text="+uri);else if(n>0)setTimeout(()=>tk(n-1),300);else window.open("https://wa.me/?text="+uri,'_blank');}tk(5);
