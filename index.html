@@ -902,15 +902,15 @@
         const c=document.getElementById('corpoBaseProdutos');c.innerHTML='';
         if(baseProdutos.length===0){c.innerHTML=`<tr><td colspan="5" style="text-align:center; color:#999;">Nenhum produto cadastrado.</td></tr>`;return;}
         
-        // Separar por status e ordenar
-        const naoMexidos=baseProdutos.filter(p=>!p.mexido);
-        const mexidos=baseProdutos.filter(p=>p.mexido).sort((a,b)=>(b.dataMexido||0)-(a.dataMexido||0));
+        // Separar por status e ordenar - Zerado (preço 0) conta como não mexido
+        const naoMexidos=baseProdutos.filter(p=>!p.mexido||(p.preco&&p.preco.includes('0,00')));
+        const mexidos=baseProdutos.filter(p=>p.mexido&&(!p.preco||!p.preco.includes('0,00'))).sort((a,b)=>(b.dataMexido||0)-(a.dataMexido||0));
         const produtosOrdenados=[...naoMexidos,...mexidos];
         
         produtosOrdenados.forEach((p,i)=>{
             let status='⚪ Não Mexido';
             let corStatus='#6c757d';
-            if(p.mexido&&p.dataMexido){
+            if(p.mexido&&p.dataMexido&&(!p.preco||!p.preco.includes('0,00'))){
                 const data=new Date(p.dataMexido);
                 const dataFormatada=data.toLocaleDateString('pt-BR');
                 status=`✅ Mexido em ${dataFormatada}`;
