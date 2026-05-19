@@ -79,6 +79,8 @@
 <div id="modalConfirmSetor" class="modal-overlay hidden"><div class="modal-content"><h3 style="margin:0; color:var(--danger);">Excluir Planilha?</h3><p style="font-size:14px; color:#555; margin:15px 0;">Todos os itens desta planilha serão apagados. Deseja continuar?</p><button type="button" class="btn-red" id="confirmSetorBtnYes">SIM, EXCLUIR</button><button type="button" class="btn-gray" onclick="fecharModal('modalConfirmSetor')">CANCELAR</button></div></div>
 <div id="modalConfirmHistorico" class="modal-overlay hidden" style="z-index:8500;"><div class="modal-content"><h3 style="margin:0; color:var(--danger);">Excluir Registro?</h3><p style="font-size:13px; color:#777; margin:10px 0;">Esta ação não pode ser desfeita.</p><button type="button" class="btn-red" id="confirmHistoricoBtnYes">EXCLUIR</button><button type="button" class="btn-gray" onclick="fecharModal('modalConfirmHistorico')">CANCELAR</button></div></div>
 <div id="modalZerar" class="modal-overlay hidden"><div class="modal-content"><h3>Zerar Setor?</h3><button type="button" class="btn-orange" onclick="confirmarZerar()">ZERAR</button><button type="button" class="btn-gray" onclick="fecharModal('modalZerar')">VOLTAR</button></div></div>
+<div id="modalLimparBase" class="modal-overlay hidden"><div class="modal-content" style="max-height:70vh; overflow-y:auto; width:95%; max-width:600px;"><h3 style="color:var(--purple); margin:0 0 15px 0;">🗑️ Limpar Base Mestra</h3><div style="margin-bottom:15px; display:flex; gap:8px;"><button type="button" class="btn-purple" style="flex:1;" onclick="selecionarTodosBase()">✅ Selecionar Tudo</button><button type="button" class="btn-gray" style="flex:1;" onclick="deselecionarTodosBase()">❌ Desselecionar</button></div><div id="listaLimparBase" style="border:1px solid #555; border-radius:8px; padding:10px; margin-bottom:15px; max-height:300px; overflow-y:auto;"></div><div style="display:flex; gap:8px;"><button type="button" class="btn-red" style="flex:1;" onclick="confirmarLimparBase()">🗑️ DELETAR</button><button type="button" class="btn-gray" style="flex:1;" onclick="fecharModal('modalLimparBase')">CANCELAR</button></div></div></div>
+<div id="modalImportarLista" class="modal-overlay hidden"><div class="modal-content" style="max-height:80vh; overflow-y:auto; width:95%; max-width:700px;"><h3 style="color:var(--purple); margin:0 0 15px 0;">📥 Importar Lista na Base Mestra</h3><p style="font-size:12px; color:#999; margin:0 0 15px 0;">Formatos aceitos:<br>• <code>Pallete-46</code><br>• <code>Pallete-46 R$ 50,00</code><br>• <code>20001 Pallete-46</code><br>• <code>20001 Pallete-46 R$ 50,00</code></p><textarea id="textareaCodigos" class="input-single" placeholder="Cole aqui..." style="height:120px; margin-bottom:15px; font-family:monospace;"></textarea><button type="button" class="btn-purple" style="width:100%; margin-bottom:15px;" onclick="processarListaCodigos()">🔍 PROCESSAR</button><div id="tabelaImportacao" style="overflow-x:auto; margin-bottom:15px;"></div><div style="display:flex; gap:8px;"><button type="button" class="btn-green" style="flex:1;" onclick="adicionarListaPlanilha()">✅ ADICIONAR À BASE</button><button type="button" class="btn-gray" style="flex:1;" onclick="fecharModal('modalImportarLista')">CANCELAR</button></div></div></div>
 <div id="modalCalc" class="modal-overlay hidden"><div class="modal-content"><h3 id="calcTitulo" style="color:var(--purple); margin:0;">Editar</h3><p id="calcSubtitulo" style="font-size:13px; font-weight:bold; margin:10px 0;">Qtd atual: 0</p><input type="tel" id="calcInput" class="input-single" style="text-align:center; font-size:26px; margin-bottom:5px;" placeholder="0" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')"><button type="button" class="btn-gray" style="margin-top:0; margin-bottom:10px; padding:10px; background:#495057;" onclick="reverterCalc()">↩ REVERTER AO ANTERIOR</button><div style="display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin-bottom:10px;"><button type="button" class="btn-orange" onclick="operacaoCalc('+')">+</button><button type="button" class="btn-orange" onclick="operacaoCalc('-')">-</button><button type="button" class="btn-orange" onclick="operacaoCalc('*')">×</button><button type="button" class="btn-orange" onclick="operacaoCalc('/')">÷</button></div><button type="button" class="btn-purple" onclick="executarCalc()">EDITAR VALOR</button><button type="button" class="btn-gray" onclick="fecharModal('modalCalc')">VOLTAR</button></div></div>
 <div id="photoOverlay" class="modal-overlay hidden" style="flex-direction:column;"><div style="background:white; padding:5px; border-radius:8px;"><img id="resultImage" style="max-width:90vw; max-height:75vh;"></div><button type="button" class="btn-gray" style="width:200px; margin-top:15px;" onclick="fecharFoto()">FECHAR</button></div>
 <div id="historicoDetalheOverlay" class="historico-detalhe-overlay hidden"><div class="historico-detalhe-box"><h3 id="historicoDetalheTitulo" style="text-align:center; color:var(--purple); margin:0 0 5px 0;">📋 Registro</h3><p id="historicoDetalheData" style="text-align:center; font-size:12px; color:var(--secondary); margin:0 0 15px 0;"></p><div id="historicoDetalheCorpo"></div><button type="button" class="btn-blue" style="background:#17a2b8; margin-bottom:8px;" onclick="printRegistroHistorico()">📸 PRINT DESTE REGISTRO</button><button type="button" class="btn-gray" onclick="fecharDetalheHistorico()">FECHAR</button></div></div>
@@ -130,18 +132,20 @@
         <button type="button" class="btn-gray" onclick="alternarLoginRegistro(false)">Voltar</button>
     </div>
 
-    <div id="escolhaSection" class="hidden">
+    <div id="escolhaSection" class="hidden" style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:100vh; padding:20px;">
         <h2 style="text-align:center; margin-bottom:5px;">Bem-vindo!</h2>
-        <p style="text-align:center; font-size:13px; color:var(--secondary); margin:0 0 5px 0;">Selecione a área que deseja acessar:</p>
-        <button type="button" class="escolha-btn" style="background:linear-gradient(135deg,#e65c00,#ff9800);" onclick="escolherArea('paletes')">
-            <span class="ei">📦</span><span class="el">Paletes</span>
-            <span class="ed">Inventário · Triados · Pregação · Não Triado · Sábado · Fotos</span>
-        </button>
-        <button type="button" class="escolha-btn" style="background:linear-gradient(135deg,#b5006e,#e83e8c);" onclick="escolherArea('embalagens')">
-            <span class="ei">🗃️</span><span class="el">Embalagens</span>
-            <span class="ed">Planilha de Embalagens · Fotos</span>
-        </button>
-        <button type="button" class="btn-gray" style="margin-top:20px;" onclick="logout()">Sair</button>
+        <p style="text-align:center; font-size:13px; color:var(--secondary); margin:0 0 20px 0;">Selecione a área que deseja acessar:</p>
+        <div style="width:100%; max-width:600px;">
+            <button type="button" class="escolha-btn" style="background:linear-gradient(135deg,#e65c00,#ff9800);" onclick="escolherArea('paletes')">
+                <span class="ei">📦</span><span class="el">Paletes</span>
+                <span class="ed">Inventário · Triados · Pregação · Não Triado · Sábado · Fotos</span>
+            </button>
+            <button type="button" class="escolha-btn" style="background:linear-gradient(135deg,#b5006e,#e83e8c);" onclick="escolherArea('embalagens')">
+                <span class="ei">🗃️</span><span class="el">Embalagens</span>
+                <span class="ed">Planilha de Embalagens · Fotos</span>
+            </button>
+            <button type="button" class="btn-gray" style="margin-top:20px; width:100%;" onclick="logout()">Sair</button>
+        </div>
     </div>
 
     <div id="menuSection" class="hidden">
@@ -191,7 +195,12 @@
         <input type="text" id="baseNome" class="input-single" placeholder="Nome do Produto">
         <input type="tel" id="basePreco" class="input-single" placeholder="R$ 0,00" oninput="maskMoeda(this)" onfocus="if(!this.value)this.value='';" onblur="if(!this.value||this.value==='R$ 0,00')this.value='';">
         <button type="button" id="btnCadastrarBase" class="btn-purple" style="margin-bottom:15px;" onclick="adicionarBaseProduto()">CADASTRAR PRODUTO</button>
-        <div style="overflow-x:auto;"><table><thead><tr><th>Cód</th><th>Nome</th><th>Preço</th><th>Status</th><th>ID</th><th>Ação</th></tr></thead><tbody id="corpoBaseProdutos"></tbody></table></div>
+        <div style="overflow-x:auto;"><table style="width:100%;"><thead><tr><th>Cód</th><th>Nome</th><th>Preço</th><th>Status</th><th>ID</th><th>Ação</th></tr></thead><tbody id="corpoBaseProdutos"></tbody></table></div>
+        <div style="display:flex; gap:8px; margin-bottom:15px;">
+            <button type="button" class="btn-blue" style="flex:1; background:#17a2b8;" onclick="abrirImportarListaBase()">📥 IMPORTAR LISTA</button>
+            <button type="button" class="btn-red" style="flex:1;" onclick="abrirLimparBase()">🗑️ LIMPAR BASE</button>
+            <button type="button" class="btn-orange" style="flex:1;" onclick="recuperarDeletedos()">↩️ RECUPERAR</button>
+        </div>
         <button type="button" class="btn-gray" onclick="voltarAoMenuBase()">VOLTAR AO MENU</button>
     </div>
 
@@ -944,6 +953,190 @@
     function fecharFoto(){fecharModal('photoOverlay');}
     function voltar(){esconderTudo();document.getElementById('menuSection').classList.remove('hidden');}
     function abrirBaseProdutos(){if(!ehSupremo)return;esconderTudo();document.getElementById('baseProdutosSection').classList.remove('hidden');renderBaseProdutos();}
+    
+    function abrirLimparBase(){
+        const lista=document.getElementById('listaLimparBase');lista.innerHTML='';
+        
+        // Determina qual categoria o usuário pode deletar
+        let categoriaFiltro='';
+        if(cargoUsuario==='Paletes'||cargoUsuario==='Ambas')categoriaFiltro='P';
+        else if(cargoUsuario==='Embalagens')categoriaFiltro='E';
+        
+        // Filtra produtos - se não tem categoria, mostra para Supremo/Supervisor apenas
+        const produtosFiltrados=baseProdutos.map((p,idx)=>({...p,idx})).filter(p=>{
+            if(ehSupremo||cargoUsuario==='Supervisor'){
+                // Supremo vê todos, mas só a categoria que tá deletando
+                return p.categoria===categoriaFiltro||!p.categoria;
+            }
+            // Usuário normal vê só sua categoria
+            return p.categoria===categoriaFiltro;
+        });
+        
+        if(produtosFiltrados.length===0){mostrarToast("Nenhum produto para deletar!");return;}
+        
+        produtosFiltrados.forEach((p)=>{
+            lista.innerHTML+=`<label style="display:flex; align-items:center; padding:8px; border-bottom:1px solid #444; cursor:pointer;"><input type="checkbox" data-idx="${p.idx}" style="margin-right:10px; width:18px; height:18px; cursor:pointer;"><span>${p.cod} - ${p.nome}</span></label>`;
+        });
+        
+        abrirModal('modalLimparBase');
+    }
+    
+    function selecionarTodosBase(){
+        document.querySelectorAll('#listaLimparBase input[type="checkbox"]').forEach(ch=>ch.checked=true);
+    }
+    
+    function deselecionarTodosBase(){
+        document.querySelectorAll('#listaLimparBase input[type="checkbox"]').forEach(ch=>ch.checked=false);
+    }
+    
+    let listaImportada=[];
+    
+    function abrirImportarListaBase(){
+        document.getElementById('textareaCodigos').value='';
+        document.getElementById('tabelaImportacao').innerHTML='';
+        listaImportada=[];
+        abrirModal('modalImportarLista');
+    }
+    
+    function processarListaCodigos(){
+        const texto=document.getElementById('textareaCodigos').value.trim();
+        if(!texto)return mostrarToast("Cole os dados!");
+        
+        const linhas=texto.split('\n').map(l=>l.trim()).filter(l=>l);
+        listaImportada=[];
+        
+        linhas.forEach((linha,idx)=>{
+            // Remove bullets e símbolos desnecessários no início
+            let processada=linha.replace(/^[•\-\*\s]+/,'').trim();
+            
+            // Extrai código (números no início)
+            const codMatch=processada.match(/^(\d+)/);
+            if(!codMatch){
+                mostrarToast("⚠️ Linha "+String(idx+1)+" sem código!");
+                return;
+            }
+            
+            const cod=codMatch[1];
+            const resto=processada.substring(cod.length).trim();
+            
+            // Extrai preço (R$ xxx,xx)
+            const precoMatch=resto.match(/R\$\s*([\d.,]+)/);
+            let preco='R$ 0,00';
+            let nome='';
+            
+            if(precoMatch){
+                preco='R$ '+precoMatch[1];
+                nome=resto.replace(precoMatch[0],'').trim();
+            }else{
+                nome=resto;
+            }
+            
+            if(!nome){
+                mostrarToast("⚠️ Linha "+String(idx+1)+" sem nome!");
+                return;
+            }
+            
+            listaImportada.push({cod,nome,preco,original:linha});
+        });
+        
+        if(listaImportada.length===0)return;
+        renderTabelaImportacao();
+        mostrarToast("✅ "+listaImportada.length+" item(ns) processado(s)!");
+    }
+    
+    function renderTabelaImportacao(){
+        const tabela=document.getElementById('tabelaImportacao');
+        if(listaImportada.length===0){tabela.innerHTML='';return;}
+        
+        let html=`<table style="width:100%;"><thead><tr><th>Código</th><th>Nome</th><th>Preço</th><th>Ação</th></tr></thead><tbody>`;
+        
+        listaImportada.forEach((item,idx)=>{
+            html+=`<tr><td><input type="tel" value="${item.cod}" style="width:80px; padding:4px;" onchange="listaImportada[${idx}].cod=this.value;"></td><td><input type="text" value="${item.nome}" style="width:150px; padding:4px;" onchange="listaImportada[${idx}].nome=this.value;"></td><td><input type="text" value="${item.preco}" style="width:100px; padding:4px;" onchange="listaImportada[${idx}].preco=this.value;"></td><td><button type="button" class="btn-red" style="padding:4px 8px; width:auto; margin:0;" onclick="listaImportada.splice(${idx},1); renderTabelaImportacao();">❌</button></td></tr>`;
+        });
+        
+        html+=`</tbody></table>`;
+        tabela.innerHTML=html;
+    }
+    
+    function adicionarListaPlanilha(){
+        if(listaImportada.length===0)return mostrarToast("Processe a lista primeiro!");
+        
+        let adicionados=0;
+        let duplicados=[];
+        let jaExistentes=[];
+        
+        listaImportada.forEach(item=>{
+            // Verifica duplicata na Base Mestra
+            const existeNaBase=baseProdutos.find(x=>x.cod===item.cod);
+            if(existeNaBase){
+                jaExistentes.push(item.cod);
+                return;
+            }
+            
+            // Verifica duplicata dentro da lista que está sendo adicionada
+            const duplicadoNaLista=listaImportada.filter(x=>x.cod===item.cod);
+            if(duplicadoNaLista.length>1&&!duplicados.includes(item.cod)){
+                duplicados.push(item.cod);
+                return;
+            }
+            
+            baseProdutos.push({
+                cod:item.cod,
+                nome:item.nome,
+                preco:item.preco,
+                mexido:false,
+                categoria:(cargoUsuario==='Paletes'||cargoUsuario==='Ambas')?'P':'E'
+            });
+            adicionados++;
+        });
+        
+        if(adicionados>0){
+            db.ref('base_produtos').set(baseProdutos).then(()=>{
+                fecharModal('modalImportarLista');
+                renderBaseProdutos();
+                document.getElementById('textareaCodigos').value='';
+                listaImportada=[];
+                
+                let msg="✅ "+adicionados+" produto(s) adicionado(s)!";
+                if(duplicados.length>0)msg+="\n⚠️ "+duplicados.length+" duplicado(s) ignorado(s)";
+                if(jaExistentes.length>0)msg+="\n⚠️ "+jaExistentes.length+" já existe(m) na Base";
+                mostrarToast(msg);
+            });
+        }else{
+            mostrarToast("❌ Nenhum produto foi adicionado!\nVerifique duplicatas e códigos já existentes.");
+        }
+    }
+    
+    function confirmarLimparBase(){
+        const selecionados=Array.from(document.querySelectorAll('#listaLimparBase input[type="checkbox"]:checked')).map(ch=>parseInt(ch.dataset.idx));
+        if(selecionados.length===0)return mostrarToast("Selecione pelo menos um produto!");
+        
+        // Faz backup ANTES de deletar
+        baseProdutosBackup=JSON.parse(JSON.stringify(baseProdutos));
+        
+        // Ordena ao contrário para não mover índices
+        selecionados.sort((a,b)=>b-a);
+        selecionados.forEach(idx=>baseProdutos.splice(idx,1));
+        
+        db.ref('base_produtos').set(baseProdutos).then(()=>{
+            fecharModal('modalLimparBase');
+            renderBaseProdutos();
+            mostrarToast("✅ "+selecionados.length+" produto(s) deletado(s)! Use 'Recuperar Deletados' se precisar.");
+        });
+    }
+    
+    function recuperarDeletedos(){
+        if(!baseProdutosBackup||baseProdutosBackup.length===0){
+            mostrarToast("⚠️ Nenhum backup disponível!");
+            return;
+        }
+        baseProdutos=JSON.parse(JSON.stringify(baseProdutosBackup));
+        db.ref('base_produtos').set(baseProdutos).then(()=>{
+            renderBaseProdutos();
+            baseProdutosBackup=null;
+            mostrarToast("✅ Produtos recuperados!");
+        });
+    }
     function voltarAoMenuBase(){esconderTudo();document.getElementById('menuSection').classList.remove('hidden');}
     function adicionarBaseProduto(){
         const c=document.getElementById('baseCod').value.trim(),n=document.getElementById('baseNome').value.trim(),p=document.getElementById('basePreco').value.trim()||"R$ 0,00";
@@ -951,9 +1144,9 @@
         
         // Determina categoria baseado no usuário
         let categoria='';
-        if(cargoUsuario==='Paletes')categoria='P';
+        if(cargoUsuario==='Paletes'||cargoUsuario==='Ambas')categoria='P';
         else if(cargoUsuario==='Embalagens')categoria='E';
-        else if(cargoUsuario==='Ambas')categoria='P'; // Padrão para "Ambas"
+        else if(ehSupremo||cargoUsuario==='Supervisor')categoria='P'; // Supremo/Supervisor padrão P (pode editar depois)
         
         baseProdutos.push({cod:c,nome:n,preco:p,mexido:false,categoria:categoria});
         db.ref('base_produtos').set(baseProdutos).then(()=>{document.getElementById('baseCod').value="";document.getElementById('baseNome').value="";document.getElementById('basePreco').value="";renderBaseProdutos();mostrarToast("✅ Produto salvo!");});
@@ -966,7 +1159,7 @@
         if(cargoUsuario==='Paletes'||cargoUsuario==='Ambas')categoriaFiltro='P';
         else if(cargoUsuario==='Embalagens')categoriaFiltro='E';
         
-        // Filtra produtos por categoria
+        // Filtra produtos por categoria - produtos sem categoria são mostrados para Supremo
         const produtosFiltrados=baseProdutos.filter(p=>{
             if(ehSupremo||cargoUsuario==='Supervisor')return true; // Supremo/Supervisor veem tudo
             return p.categoria===categoriaFiltro;
@@ -989,8 +1182,7 @@
             }
             const idxReal=baseProdutos.indexOf(p);
             const idAtual=p.id||'';
-            const labelCategoria=p.categoria==='P'?'[Paletes]':p.categoria==='E'?'[Embalagens]':'';
-            c.innerHTML+=`<tr><td>${p.cod}</td><td>${p.nome} ${labelCategoria}</td><td>${p.preco||'R$ 0,00'}</td><td style="text-align:center; color:${corStatus}; font-size:10px; font-weight:bold;">${status}</td><td style="text-align:center;"><select style="width:60px; padding:4px; border-radius:4px; border:1px solid #555; background:#333; color:white;" onchange="alterarIDProduto(${idxReal}, this.value)"><option value="">-</option><option value="BK" ${idAtual==='BK'?'selected':''}>BK</option><option value="TX" ${idAtual==='TX'?'selected':''}>TX</option></select></td><td style="text-align:center; display:flex; gap:4px; justify-content:center;"><button type="button" style="background:#17a2b8; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="editarBaseProduto(${idxReal})">✏️</button><button type="button" style="background:red; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="confirmarExcluirBase(${idxReal})">❌</button></td></tr>`;
+            c.innerHTML+=`<tr><td>${p.cod}</td><td>${p.nome}</td><td style="white-space:nowrap;">${p.preco||'R$ 0,00'}</td><td style="text-align:center; color:${corStatus}; font-size:10px; font-weight:bold;">${status}</td><td style="text-align:center;"><select style="width:60px; padding:4px; border-radius:4px; border:1px solid #555; background:#333; color:white;" onchange="alterarIDProduto(${idxReal}, this.value)"><option value="">-</option><option value="BK" ${idAtual==='BK'?'selected':''}>BK</option><option value="TX" ${idAtual==='TX'?'selected':''}>TX</option></select></td><td style="text-align:center; display:flex; gap:4px; justify-content:center;"><button type="button" style="background:#17a2b8; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="editarBaseProduto(${idxReal})">✏️</button><button type="button" style="background:red; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="confirmarExcluirBase(${idxReal})">❌</button></td></tr>`;
         });
     }
     
