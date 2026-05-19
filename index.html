@@ -948,15 +948,34 @@
     function adicionarBaseProduto(){
         const c=document.getElementById('baseCod').value.trim(),n=document.getElementById('baseNome').value.trim(),p=document.getElementById('basePreco').value.trim()||"R$ 0,00";
         if(!c||!n)return mostrarToast("Preencha Código e Nome!");if(baseProdutos.find(x=>x.cod===c))return mostrarToast("Código já existe na base!");
-        baseProdutos.push({cod:c,nome:n,preco:p,mexido:false});
+        
+        // Determina categoria baseado no usuário
+        let categoria='';
+        if(cargoUsuario==='Paletes')categoria='P';
+        else if(cargoUsuario==='Embalagens')categoria='E';
+        else if(cargoUsuario==='Ambas')categoria='P'; // Padrão para "Ambas"
+        
+        baseProdutos.push({cod:c,nome:n,preco:p,mexido:false,categoria:categoria});
         db.ref('base_produtos').set(baseProdutos).then(()=>{document.getElementById('baseCod').value="";document.getElementById('baseNome').value="";document.getElementById('basePreco').value="";renderBaseProdutos();mostrarToast("✅ Produto salvo!");});
     }
     function renderBaseProdutos(){
         const c=document.getElementById('corpoBaseProdutos');c.innerHTML='';
-        if(baseProdutos.length===0){c.innerHTML=`<tr><td colspan="6" style="text-align:center; color:#999;">Nenhum produto cadastrado.</td></tr>`;return;}
         
-        const naoMexidos=baseProdutos.filter(p=>!p.mexido);
-        const mexidos=baseProdutos.filter(p=>p.mexido).sort((a,b)=>(b.dataMexido||0)-(a.dataMexido||0));
+        // Determina qual categoria o usuário pode ver
+        let categoriaFiltro='';
+        if(cargoUsuario==='Paletes'||cargoUsuario==='Ambas')categoriaFiltro='P';
+        else if(cargoUsuario==='Embalagens')categoriaFiltro='E';
+        
+        // Filtra produtos por categoria
+        const produtosFiltrados=baseProdutos.filter(p=>{
+            if(ehSupremo||cargoUsuario==='Supervisor')return true; // Supremo/Supervisor veem tudo
+            return p.categoria===categoriaFiltro;
+        });
+        
+        if(produtosFiltrados.length===0){c.innerHTML=`<tr><td colspan="6" style="text-align:center; color:#999;">Nenhum produto cadastrado.</td></tr>`;return;}
+        
+        const naoMexidos=produtosFiltrados.filter(p=>!p.mexido);
+        const mexidos=produtosFiltrados.filter(p=>p.mexido).sort((a,b)=>(b.dataMexido||0)-(a.dataMexido||0));
         const produtosOrdenados=[...naoMexidos,...mexidos];
         
         produtosOrdenados.forEach((p,i)=>{
@@ -970,7 +989,8 @@
             }
             const idxReal=baseProdutos.indexOf(p);
             const idAtual=p.id||'';
-            c.innerHTML+=`<tr><td>${p.cod}</td><td>${p.nome}</td><td>${p.preco||'R$ 0,00'}</td><td style="text-align:center; color:${corStatus}; font-size:10px; font-weight:bold;">${status}</td><td style="text-align:center;"><select style="width:60px; padding:4px; border-radius:4px; border:1px solid #555; background:#333; color:white;" onchange="alterarIDProduto(${idxReal}, this.value)"><option value="">-</option><option value="BK" ${idAtual==='BK'?'selected':''}>BK</option><option value="TX" ${idAtual==='TX'?'selected':''}>TX</option></select></td><td style="text-align:center; display:flex; gap:4px; justify-content:center;"><button type="button" style="background:#17a2b8; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="editarBaseProduto(${idxReal})">✏️</button><button type="button" style="background:red; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="confirmarExcluirBase(${idxReal})">❌</button></td></tr>`;
+            const labelCategoria=p.categoria==='P'?'[Paletes]':p.categoria==='E'?'[Embalagens]':'';
+            c.innerHTML+=`<tr><td>${p.cod}</td><td>${p.nome} ${labelCategoria}</td><td>${p.preco||'R$ 0,00'}</td><td style="text-align:center; color:${corStatus}; font-size:10px; font-weight:bold;">${status}</td><td style="text-align:center;"><select style="width:60px; padding:4px; border-radius:4px; border:1px solid #555; background:#333; color:white;" onchange="alterarIDProduto(${idxReal}, this.value)"><option value="">-</option><option value="BK" ${idAtual==='BK'?'selected':''}>BK</option><option value="TX" ${idAtual==='TX'?'selected':''}>TX</option></select></td><td style="text-align:center; display:flex; gap:4px; justify-content:center;"><button type="button" style="background:#17a2b8; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="editarBaseProduto(${idxReal})">✏️</button><button type="button" style="background:red; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="confirmarExcluirBase(${idxReal})">❌</button></td></tr>`;
         });
     }
     
@@ -984,7 +1004,7 @@
     function editarBaseProduto(i){
         const p=baseProdutos[i];document.getElementById('baseCod').value=p.cod;document.getElementById('baseNome').value=p.nome;document.getElementById('basePreco').value=p.preco||'R$ 0,00';
         const btn=document.getElementById('btnCadastrarBase');btn.innerText='SALVAR EDIÇÃO';
-        btn.onclick=()=>{const c=document.getElementById('baseCod').value.trim(),n=document.getElementById('baseNome').value.trim(),pr=document.getElementById('basePreco').value.trim()||'R$ 0,00';if(!c||!n)return mostrarToast("Preencha Código e Nome!");baseProdutos[i]={cod:c,nome:n,preco:pr,mexido:true,dataMexido:new Date().getTime()};db.ref('base_produtos').set(baseProdutos).then(()=>{document.getElementById('baseCod').value="";document.getElementById('baseNome').value="";document.getElementById('basePreco').value="";btn.innerText='CADASTRAR PRODUTO';btn.onclick=adicionarBaseProduto;renderBaseProdutos();mostrarToast("✅ Produto editado!");});};window.scrollTo(0,0);
+        btn.onclick=()=>{const c=document.getElementById('baseCod').value.trim(),n=document.getElementById('baseNome').value.trim(),pr=document.getElementById('basePreco').value.trim()||'R$ 0,00';if(!c||!n)return mostrarToast("Preencha Código e Nome!");baseProdutos[i]={cod:c,nome:n,preco:pr,mexido:true,dataMexido:new Date().getTime(),categoria:p.categoria,id:p.id};db.ref('base_produtos').set(baseProdutos).then(()=>{document.getElementById('baseCod').value="";document.getElementById('baseNome').value="";document.getElementById('basePreco').value="";btn.innerText='CADASTRAR PRODUTO';btn.onclick=adicionarBaseProduto;renderBaseProdutos();mostrarToast("✅ Produto editado!");});};window.scrollTo(0,0);
     }
     function confirmarExcluirBase(i){abrirModal('modalConfirmBase');document.getElementById('confirmBaseBtnYes').onclick=function(){baseProdutos.splice(i,1);db.ref('base_produtos').set(baseProdutos).then(()=>{fecharModal('modalConfirmBase');mostrarToast("✅ Excluído!");});};}
     function abrirGerenciarSetores(){esconderTudo();document.getElementById('gerenciarSetoresSection').classList.remove('hidden');renderListaSetores();}
