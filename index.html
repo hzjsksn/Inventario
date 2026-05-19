@@ -191,7 +191,7 @@
         <input type="text" id="baseNome" class="input-single" placeholder="Nome do Produto">
         <input type="tel" id="basePreco" class="input-single" placeholder="R$ 0,00" oninput="maskMoeda(this)" onfocus="if(!this.value)this.value='';" onblur="if(!this.value||this.value==='R$ 0,00')this.value='';">
         <button type="button" id="btnCadastrarBase" class="btn-purple" style="margin-bottom:15px;" onclick="adicionarBaseProduto()">CADASTRAR PRODUTO</button>
-        <div style="overflow-x:auto;"><table><thead><tr><th>Cód</th><th>Nome</th><th>Preço</th><th>Status</th><th>Ação</th></tr></thead><tbody id="corpoBaseProdutos"></tbody></table></div>
+        <div style="overflow-x:auto;"><table><thead><tr><th>Cód</th><th>Nome</th><th>Preço</th><th>Status</th><th>ID</th><th>Ação</th></tr></thead><tbody id="corpoBaseProdutos"></tbody></table></div>
         <button type="button" class="btn-gray" onclick="voltarAoMenuBase()">VOLTAR AO MENU</button>
     </div>
 
@@ -330,7 +330,7 @@
 
     let memoria = {}, membros = [], setores = [], baseProdutos = [], planilhas = {}, planilhaAtiva = null;
     let galeriaPaletes = [], galeriaEmbalagens = [];
-    let cargoUsuario = "", ehSupremo = false, itemEditandoIndex = null, qtdOriginalItem = 0, usuarioAtivoNode = "";
+    let cargoUsuario = "", ehSupremo = false, itemEditandoIndex = null, qtdOriginalItem = 0, usuarioAtivoNode = "", historicalValoresCalc = [];
     let toastTimeout, inactivityTimer;
     let historicoRegistros = [], registroAtualDetalhe = null;
     let areaEscolhida = null;
@@ -402,7 +402,8 @@
         db.ref('membros').on('value',(s)=>{membros=s.val()||[];if(!document.getElementById('membrosSection').classList.contains('hidden'))renderMembros();});
         db.ref('galeria_paletes').on('value',(s)=>{const d=s.val();galeriaPaletes=d?(Array.isArray(d)?d:Object.values(d)).filter(p=>p&&p.cod):[];if(!document.getElementById('galeriaPaletesSection').classList.contains('hidden'))filtrarGaleria('paletes');});
         db.ref('galeria_embalagens').on('value',(s)=>{const d=s.val();galeriaEmbalagens=d?(Array.isArray(d)?d:Object.values(d)).filter(p=>p&&p.cod):[];if(!document.getElementById('galeriaEmbalagemSection').classList.contains('hidden'))filtrarGaleria('embalagens');});
-        db.ref('base_produtos').on('value',(s)=>{const d=s.val();baseProdutos=d?(Array.isArray(d)?d:Object.values(d)).filter(p=>p&&p.cod):[];if(!document.getElementById('baseProdutosSection').classList.contains('hidden'))renderBaseProdutos();});
+        // Carrega Base Mestra para TODOS usarem, mas apenas Supremo/Supervisor podem editar
+        db.ref('base_produtos').on('value',(s)=>{const d=s.val();baseProdutos=d?(Array.isArray(d)?d:Object.values(d)).filter(p=>p&&p.cod):[];if(document.getElementById('baseProdutosSection')&&!document.getElementById('baseProdutosSection').classList.contains('hidden'))renderBaseProdutos();});
         const l=Storage.get(CHAVE+'_LOG');
         if(l){const o=JSON.parse(l);document.getElementById('usuario').value=o.u;document.getElementById('senha').value=o.s;document.getElementById('lembrar').checked=true;}
     }
@@ -586,7 +587,7 @@
         if(!podeAlterar())return;
         const c=document.getElementById('sabCod').value.trim(),it=document.getElementById('sabItem').value.trim(),p=document.getElementById('sabPreco').value||"R$ 0,00",q=document.getElementById('sabQtd').value||"0";
         if(!c||!it)return mostrarToast("Preencha Cód e Produto!");
-        if(sabadoItens.find(x=>x.cod===c))return mostrarToast("⚠️ Cód "+c+" já existe!");
+        if(sabadoItens.find(x=>x.cod===c&&x.item===it))return mostrarToast("⚠️ Este item já existe no sábado!");
         sabadoItens.push({cod:c,item:it,qtd:q,preco:p});
         salvarSabadoBanco().then(()=>{renderTabelaSabado();mostrarToast("✅ Item adicionado!");});
         document.getElementById('sugestoesSabado').innerHTML='';
@@ -642,6 +643,7 @@
         if(!podeAlterar())return;
         itemEditandoIndex=i;window._calcTarget='sabado';
         const item=sabadoItens[i];qtdOriginalItem=parseInt(item.qtd)||0;
+        historicalValoresCalc=[String(qtdOriginalItem)];
         document.getElementById('calcTitulo').innerText=item.item;document.getElementById('calcSubtitulo').innerText="Qtd atual: "+item.qtd;document.getElementById('calcInput').value="";
         abrirModal('modalCalc');setTimeout(()=>{const inp=document.getElementById('calcInput');inp.setAttribute('inputmode','numeric');inp.focus();},100);
     }
@@ -747,31 +749,63 @@
         if(!podeAlterar())return;
         window._calcTarget='setor';itemEditandoIndex=i;
         const item=memoria[window.setorAtivo][i];qtdOriginalItem=parseInt(item.qtd)||0;
+        historicalValoresCalc=[String(qtdOriginalItem)];
         document.getElementById('calcTitulo').innerText=item.item;document.getElementById('calcSubtitulo').innerText="Qtd atual: "+item.qtd;document.getElementById('calcInput').value="";
         abrirModal('modalCalc');setTimeout(()=>{const inp=document.getElementById('calcInput');inp.setAttribute('inputmode','numeric');inp.focus();},100);
     }
     function operacaoCalc(op){
         const t=document.getElementById('calcInput').value.trim();if(t==="")return mostrarToast("Digite valor!");
-        let val=parseInt(t)||0,atual;
+        let val=parseInt(t)||0;
+        // Pega a quantidade ATUAL do item
+        let atual;
         if(window._calcTarget==='sabado')atual=parseInt(sabadoItens[itemEditandoIndex].qtd)||0;
         else atual=parseInt(memoria[window.setorAtivo][itemEditandoIndex].qtd)||0;
+        
+        // Faz a operação com a quantidade atual + o valor digitado
         if(op==='+')atual+=val;else if(op==='-')atual-=val;else if(op==='*')atual*=val;else if(op==='/')atual=val!==0?Math.round(atual/val):0;
-        if(window._calcTarget==='sabado'){sabadoItens[itemEditandoIndex].qtd=atual;salvarSabadoBanco();}
+        
+        // Salva no histórico DEPOIS da operação
+        historicalValoresCalc.push(String(atual));
+        
+        // Atualiza no banco
+        if(window._calcTarget==='sabado'){sabadoItens[itemEditandoIndex].qtd=atual;db.ref('sabado/'+usuarioAtivoNode).set({itens:sabadoItens,pessoas:sabadoPessoas});}
         else{memoria[window.setorAtivo][itemEditandoIndex].qtd=atual;db.ref('memoria/'+usuarioAtivoNode).set(memoria);}
-        document.getElementById('calcSubtitulo').innerText="Qtd atual: "+atual;document.getElementById('calcInput').value="";
+        
+        document.getElementById('calcSubtitulo').innerText="Qtd atual: "+atual;
+        document.getElementById('calcInput').value="";
     }
     function executarCalc(){
         const t=document.getElementById('calcInput').value.trim();if(t==="")return mostrarToast("Digite valor!");
         const val=parseInt(t)||0;
         if(window._calcTarget==='sabado'){sabadoItens[itemEditandoIndex].qtd=val;salvarSabadoBanco().then(()=>renderTabelaSabado());}
-        else{memoria[window.setorAtivo][itemEditandoIndex].qtd=val;db.ref('memoria/'+usuarioAtivoNode).set(memoria).then(()=>render());}
+        else{
+            const item=memoria[window.setorAtivo][itemEditandoIndex];
+            memoria[window.setorAtivo][itemEditandoIndex].qtd=val;
+            db.ref('memoria/'+usuarioAtivoNode).set(memoria).then(()=>{
+                // Sincroniza com Base Mestra se for Supremo/Supervisor
+                sincronizarComBaseMestra(item.cod, item.preco);
+                render();
+            });
+        }
         fecharModal('modalCalc');
     }
     function reverterCalc(){
-        if(itemEditandoIndex===null)return;
-        if(window._calcTarget==='sabado'){sabadoItens[itemEditandoIndex].qtd=qtdOriginalItem;salvarSabadoBanco();}
-        else{memoria[window.setorAtivo][itemEditandoIndex].qtd=qtdOriginalItem;db.ref('memoria/'+usuarioAtivoNode).set(memoria);}
-        document.getElementById('calcSubtitulo').innerText="Qtd atual: "+qtdOriginalItem;document.getElementById('calcInput').value="";mostrarToast("↩ Valor revertido!");
+        if(itemEditandoIndex===null||historicalValoresCalc.length<=1)return mostrarToast("Nada para reverter!");
+        historicalValoresCalc.pop();
+        const valorAnterior=parseInt(historicalValoresCalc[historicalValoresCalc.length-1])||0;
+        
+        // Reverte no item
+        if(window._calcTarget==='sabado'){
+            sabadoItens[itemEditandoIndex].qtd=valorAnterior;
+            db.ref('sabado/'+usuarioAtivoNode).set({itens:sabadoItens,pessoas:sabadoPessoas});
+        }else{
+            memoria[window.setorAtivo][itemEditandoIndex].qtd=valorAnterior;
+            db.ref('memoria/'+usuarioAtivoNode).set(memoria);
+        }
+        
+        document.getElementById('calcSubtitulo').innerText="Qtd atual: "+valorAnterior;
+        document.getElementById('calcInput').value="";
+        mostrarToast("↩ Voltou para: "+valorAnterior);
     }
 
     function expandirAbreviacao(t){const ab={'pl-':'pallete-','pal-':'pallete-','sp-':'separador-','sep-':'separador-','cx-':'caixa-','tb-':'tampa-','cp-':'compensado-'};let e=t.toLowerCase();for(const[a,c]of Object.entries(ab)){if(e.startsWith(a)){e=c+e.slice(a.length);break;}}return e;}
@@ -829,7 +863,7 @@
         const c=document.getElementById('novoCod').value,it=document.getElementById('novoItem').value,p=document.getElementById('novoPreco').value||"R$ 0,00",q=document.getElementById('novoQtd').value||"0";
         if(!c||!it)return;
         if(!memoria[window.setorAtivo])memoria[window.setorAtivo]=[];
-        const dup=memoria[window.setorAtivo].find(x=>x.cod===c);if(dup)return mostrarToast("⚠️ Cód "+c+" já existe: "+dup.item);
+        const dup=memoria[window.setorAtivo].find(x=>x.cod===c&&x.item===it);if(dup)return mostrarToast("⚠️ Este item já existe: "+c+" - "+it);
         const ib=baseProdutos.findIndex(x=>x.cod===c);
         if(ib>=0){if(p!=="R$ 0,00")baseProdutos[ib].preco=p;baseProdutos[ib].nome=it;}
         else baseProdutos.push({cod:c,nome:it,preco:p});
@@ -840,6 +874,18 @@
         ['novoCod','novoItem','novoPreco','novoQtd'].forEach(id=>document.getElementById(id).value='');
     }
 
+    function sincronizarComBaseMestra(cod, novoPreco){
+        // Sincroniza alterações de Supremo/Supervisor com a Base Mestra
+        if(!(ehSupremo||cargoUsuario==='Supervisor'))return;
+        const idxBase=baseProdutos.findIndex(p=>p.cod===cod);
+        if(idxBase!==-1&&novoPreco&&novoPreco!==baseProdutos[idxBase].preco){
+            baseProdutos[idxBase].preco=novoPreco;
+            baseProdutos[idxBase].mexido=true;
+            baseProdutos[idxBase].dataMexido=new Date().getTime();
+            db.ref('base_produtos').set(baseProdutos);
+        }
+    }
+    
     function obterPrecoCorrigido(cod,precoItem){
         const pb=baseProdutos.find(p=>p.cod===cod);
         return pb?pb.preco:precoItem;
@@ -855,7 +901,7 @@
     }
     function tirarFotoGrupo(){
         const tmp=document.getElementById('printTempArea');tmp.innerHTML=`<h2 style="text-align:center;">ESTOQUE ATUAL</h2>`;let tem=false;let totalGeralGrupo=0;
-        ['Triados','Não Triado','Pregação'].forEach(s=>{const itens=(memoria[s]||[]).filter(x=>parseInt(x.qtd)>0);if(itens.length>0){tem=true;tmp.innerHTML+=`<div class="print-header">${s.toUpperCase()}</div>`;let t=`<table><thead><tr><th>Cód</th><th>Item</th><th>Qtd</th><th>Preço</th><th>Valor Total</th></tr></thead><tbody>`;let totalSetor=0;itens.forEach(i=>{const pr=obterPrecoCorrigido(i.cod,i.preco);const qtd=parseInt(i.qtd)||0;const precoNum=parseMoeda(pr);const valorItem=qtd*precoNum;totalSetor+=valorItem;totalGeralGrupo+=valorItem;const valorFormatado='R$ '+valorItem.toFixed(2).replace('.',',').replace(/(\\d)(?=(\\d{3})+(?!\\d))/g,'$1.');t+=`<tr><td>${i.cod}</td><td>${i.item}</td><td style="color:#dc3545; font-weight:bold; text-align:center;">${i.qtd}</td><td style="white-space:nowrap;">${pr}</td><td style="white-space:nowrap; text-align:right; font-weight:bold;">${valorFormatado}</td></tr>`;});const totalSetorFormatado='R$ '+totalSetor.toFixed(2).replace('.',',').replace(/(\\d)(?=(\\d{3})+(?!\\d))/g,'$1.');t+=`<tr style="background:#f0f0f0; font-weight:bold;"><td colspan="4" style="text-align:right; padding-right:8px;">Subtotal:</td><td style="text-align:right;">${totalSetorFormatado}</td></tr>`;tmp.innerHTML+=t+`</tbody></table>`;}});
+        ['Triados','Não Triado','Pregação'].forEach(s=>{const itens=(memoria[s]||[]).filter(x=>parseInt(x.qtd)>0);if(itens.length>0){tem=true;tmp.innerHTML+=`<div class="print-header">${s.toUpperCase()}</div>`;let t=`<table><thead><tr><th>Cód</th><th>Item</th><th style="text-align:center; font-size:10px; width:25px;">ID</th><th>Preço</th><th style="text-align:center;">Qtd</th><th>Valor Total</th></tr></thead><tbody>`;let totalSetor=0;itens.forEach(i=>{const pr=obterPrecoCorrigido(i.cod,i.preco);const qtd=parseInt(i.qtd)||0;const precoNum=parseMoeda(pr);const valorItem=qtd*precoNum;totalSetor+=valorItem;totalGeralGrupo+=valorItem;const valorFormatado='R$ '+valorItem.toFixed(2).replace('.',',').replace(/(\\d)(?=(\\d{3})+(?!\\d))/g,'$1.');const prodBase=baseProdutos.find(p=>p.cod===i.cod);const id=prodBase&&prodBase.id?prodBase.id:'-';t+=`<tr><td>${i.cod}</td><td>${i.item}</td><td style="text-align:center; font-weight:bold; color:#dc3545; font-size:11px; width:25px;">${id}</td><td style="white-space:nowrap;">${pr}</td><td style="text-align:center; color:#dc3545; font-weight:bold;">${i.qtd}</td><td style="white-space:nowrap; text-align:right; font-weight:bold;">${valorFormatado}</td></tr>`;});const totalSetorFormatado='R$ '+totalSetor.toFixed(2).replace('.',',').replace(/(\\d)(?=(\\d{3})+(?!\\d))/g,'$1.');t+=`<tr style="background:#f0f0f0; font-weight:bold;"><td colspan="5" style="text-align:right; padding-right:8px;">Subtotal:</td><td style="text-align:right;">${totalSetorFormatado}</td></tr>`;tmp.innerHTML+=t+`</tbody></table>`;}});
         if(!tem)return mostrarToast("Vazio!");
         const totalGeralFormatado='R$ '+totalGeralGrupo.toFixed(2).replace('.',',').replace(/(\\d)(?=(\\d{3})+(?!\\d))/g,'$1.');
         tmp.innerHTML+=`<div style="margin-top:20px; text-align:right; font-weight:bold; font-size:18px;">TOTAL GERAL: ${totalGeralFormatado}</div>`;
@@ -876,8 +922,15 @@
         abrirModal('modalZerar');
     }
     function confirmarZerar(){
-        if(window._zerarSabado){window._zerarSabado=false;sabadoItens.forEach(i=>i.qtd=0);salvarSabadoBanco().then(()=>{renderTabelaSabado();mostrarToast("✅ Sábado zerado!");fecharModal('modalZerar');});return;}
-        if(podeZerar()&&memoria[window.setorAtivo]){memoria[window.setorAtivo].forEach(i=>i.qtd=0);mostrarToast("✅ Foi zerado!");render();fecharModal('modalZerar');db.ref('memoria/'+usuarioAtivoNode).set(memoria);}
+        if(window._zerarSabado){window._zerarSabado=false;sabadoItens.forEach(i=>i.qtd=0);db.ref('sabado/'+usuarioAtivoNode).set({itens:sabadoItens,pessoas:sabadoPessoas}).then(()=>{renderTabelaSabado();mostrarToast("✅ Sábado zerado!");fecharModal('modalZerar');});return;}
+        if(podeZerar()&&memoria[window.setorAtivo]){
+            memoria[window.setorAtivo].forEach(i=>i.qtd=0);
+            db.ref('memoria/'+usuarioAtivoNode).set(memoria).then(()=>{
+                render();
+                mostrarToast("✅ Setor zerado!");
+                fecharModal('modalZerar');
+            });
+        }
     }
     function logout(){
         clearTimeout(inactivityTimer);
@@ -900,23 +953,32 @@
     }
     function renderBaseProdutos(){
         const c=document.getElementById('corpoBaseProdutos');c.innerHTML='';
-        if(baseProdutos.length===0){c.innerHTML=`<tr><td colspan="5" style="text-align:center; color:#999;">Nenhum produto cadastrado.</td></tr>`;return;}
+        if(baseProdutos.length===0){c.innerHTML=`<tr><td colspan="6" style="text-align:center; color:#999;">Nenhum produto cadastrado.</td></tr>`;return;}
         
-        // Separar por status e ordenar - Zerado (preço 0) conta como não mexido
-        const naoMexidos=baseProdutos.filter(p=>!p.mexido||(p.preco&&p.preco.includes('0,00')));
-        const mexidos=baseProdutos.filter(p=>p.mexido&&(!p.preco||!p.preco.includes('0,00'))).sort((a,b)=>(b.dataMexido||0)-(a.dataMexido||0));
+        const naoMexidos=baseProdutos.filter(p=>!p.mexido);
+        const mexidos=baseProdutos.filter(p=>p.mexido).sort((a,b)=>(b.dataMexido||0)-(a.dataMexido||0));
         const produtosOrdenados=[...naoMexidos,...mexidos];
         
         produtosOrdenados.forEach((p,i)=>{
             let status='⚪ Não Mexido';
             let corStatus='#6c757d';
-            if(p.mexido&&p.dataMexido&&(!p.preco||!p.preco.includes('0,00'))){
+            if(p.mexido&&p.dataMexido){
                 const data=new Date(p.dataMexido);
                 const dataFormatada=data.toLocaleDateString('pt-BR');
                 status=`✅ Mexido em ${dataFormatada}`;
                 corStatus='#dc3545';
             }
-            c.innerHTML+=`<tr><td>${p.cod}</td><td>${p.nome}</td><td>${p.preco||'R$ 0,00'}</td><td style="text-align:center; color:${corStatus}; font-size:10px; font-weight:bold;">${status}</td><td style="text-align:center; display:flex; gap:4px; justify-content:center;"><button type="button" style="background:#17a2b8; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="editarBaseProduto(${baseProdutos.indexOf(p)})">✏️</button><button type="button" style="background:red; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="confirmarExcluirBase(${baseProdutos.indexOf(p)})">❌</button></td></tr>`;
+            const idxReal=baseProdutos.indexOf(p);
+            const idAtual=p.id||'';
+            c.innerHTML+=`<tr><td>${p.cod}</td><td>${p.nome}</td><td>${p.preco||'R$ 0,00'}</td><td style="text-align:center; color:${corStatus}; font-size:10px; font-weight:bold;">${status}</td><td style="text-align:center;"><select style="width:60px; padding:4px; border-radius:4px; border:1px solid #555; background:#333; color:white;" onchange="alterarIDProduto(${idxReal}, this.value)"><option value="">-</option><option value="BK" ${idAtual==='BK'?'selected':''}>BK</option><option value="TX" ${idAtual==='TX'?'selected':''}>TX</option></select></td><td style="text-align:center; display:flex; gap:4px; justify-content:center;"><button type="button" style="background:#17a2b8; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="editarBaseProduto(${idxReal})">✏️</button><button type="button" style="background:red; padding:4px 6px; width:auto; margin:0; border:none; border-radius:8px; color:white; font-size:11px;" onclick="confirmarExcluirBase(${idxReal})">❌</button></td></tr>`;
+        });
+    }
+    
+    function alterarIDProduto(i, novoID){
+        baseProdutos[i].id=novoID;
+        db.ref('base_produtos').set(baseProdutos).then(()=>{
+            renderBaseProdutos();
+            mostrarToast("✅ ID alterado para: "+(novoID||'Nenhum'));
         });
     }
     function editarBaseProduto(i){
